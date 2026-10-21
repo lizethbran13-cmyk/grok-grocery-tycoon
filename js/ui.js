@@ -1,15 +1,15 @@
 // Grok Grocery Tycoon - menus: title (Career / Boss + store type), look editor, how to play, journal, banners,
 // the Manager's Desk (floor planner, prices, orders, staff, empire map, news), hiring, bank, brand lab, rival spy, time clock, day summary.
-import { $, esc } from './util.js?v=ggt17';
-import { S, persist, resetSave, newGame, capOf, news, staffName } from './save.js?v=ggt17';
-import { sfx, setSound } from './audio.js?v=ggt17';
-import { panel, closePanel, on, toast } from './uikit.js?v=ggt17';
-import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=ggt17';
-import { goal, TASKS } from './story.js?v=ggt17';
-import { GAMES, MG_NAMES } from './mg.js?v=ggt17';
-import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, EMPIRE, GOALS, BRAND_LINES, TYPES, TYPE_IDS, typeOf } from './data.js?v=ggt17';
-import { GEOM } from './map.js?v=ggt17';
-import { storeIds, mine, shelfFrac, wholesale, fmtClock } from './sim.js?v=ggt17';
+import { $, esc } from './util.js?v=ggt18';
+import { S, persist, resetSave, newGame, capOf, news, staffName } from './save.js?v=ggt18';
+import { sfx, setSound } from './audio.js?v=ggt18';
+import { panel, closePanel, on, toast } from './uikit.js?v=ggt18';
+import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=ggt18';
+import { goal, TASKS } from './story.js?v=ggt18';
+import { GAMES, MG_NAMES } from './mg.js?v=ggt18';
+import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, EMPIRE, GOALS, BRAND_LINES, TYPES, TYPE_IDS, typeOf } from './data.js?v=ggt18';
+import { GEOM } from './map.js?v=ggt18';
+import { storeIds, mine, shelfFrac, wholesale, fmtClock } from './sim.js?v=ggt18';
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const pct = (p) => Math.round(p * 100) + '%';

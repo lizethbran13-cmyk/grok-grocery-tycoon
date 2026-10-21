@@ -1,19 +1,19 @@
 // DLC #46 Super Shop Online Pass: the online order loop (queue, pickers, the Grok van, the Ship Center), the Online Store desk,
 // pet cameos, and your 📱 phone (calls, meetings, the online shop, stock orders, reviews).
 import * as THREE from 'three';
-import { OWN, WH, DESK, VAN_HOME, HOUSES, vanProto } from './online.js?v=ggt17';
-import { S, persist, news } from './save.js?v=ggt17';
-import { GEOM } from './map.js?v=ggt17';
-import { ROADS } from './map.js?v=ggt17';
-import { STORE, FIX, DEPTS } from './data.js?v=ggt17';
-import { OPEN, CLOSE, EV, fmtClock } from './sim.js?v=ggt17';
-import { panel, on, toast, talk, esc } from './uikit.js?v=ggt17';
-import { sfx } from './audio.js?v=ggt17';
-import { Builder, P } from './geo.js?v=ggt17';
-import { compact } from './compact.js?v=ggt17';
-import { MATS } from './mats.js?v=ggt17';
-import { makePet, animPet } from './pets.js?v=ggt17';
-import { inView } from './perf.js?v=ggt17';
+import { OWN, WH, DESK, VAN_HOME, HOUSES, vanProto } from './online.js?v=ggt18';
+import { S, persist, news } from './save.js?v=ggt18';
+import { GEOM } from './map.js?v=ggt18';
+import { ROADS } from './map.js?v=ggt18';
+import { STORE, FIX, DEPTS } from './data.js?v=ggt18';
+import { OPEN, CLOSE, EV, fmtClock } from './sim.js?v=ggt18';
+import { panel, on, toast, talk, esc } from './uikit.js?v=ggt18';
+import { sfx } from './audio.js?v=ggt18';
+import { Builder, P } from './geo.js?v=ggt18';
+import { compact } from './compact.js?v=ggt18';
+import { MATS } from './mats.js?v=ggt18';
+import { makePet, animPet } from './pets.js?v=ggt18';
+import { inView } from './perf.js?v=ggt18';
 const PI = Math.PI, $ = (id) => document.getElementById(id), $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const NAMES = ['Ava R.', 'Mateo G.', 'Noah P.', 'Sofia L.', 'Liam K.', 'Mia T.', 'Ethan W.', 'Zoe B.', 'Leo M.', 'Isla C.', 'Grandma Rosa', 'Mr. Whiskers', 'The Okafors', 'Mrs. Parsnip'];
 const PETS = { luna: ['Luna', '🐭'], pirat: ['Pi-rat', '🏴‍☠️'], snowie: ['Snowie', '🐁'], candy: ['Candy', '🐶'], torty: ['Martina "Torty"', '🐢'] };

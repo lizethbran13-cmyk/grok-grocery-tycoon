@@ -1,18 +1,18 @@
 // Grok Grocery Tycoon - boot, app state, main loop.
 import * as THREE from 'three';
-import { E, initEngine, render, trackFps } from './engine.js?v=ggt17';
-import { initMats } from './mats.js?v=ggt17';
-import { initInput, clearEdges, edge, IN } from './input.js?v=ggt17';
-import { initAudio, setSound, sfx } from './audio.js?v=ggt17';
-import { S, persist, newGame } from './save.js?v=ggt17';
-import { HUD } from './hud.js?v=ggt17';
-import { UI } from './ui.js?v=ggt17';
-import { closePanel } from './uikit.js?v=ggt17';
-import { Game } from './game.js?v=ggt17';
-import { $ } from './util.js?v=ggt17';
-import { GEOM } from './map.js?v=ggt17';
-import { BUILDINGS } from './bld.js?v=ggt17';
-import { loadFont } from './text3d.js?v=ggt17';
+import { E, initEngine, render, trackFps } from './engine.js?v=ggt18';
+import { initMats } from './mats.js?v=ggt18';
+import { initInput, clearEdges, edge, IN } from './input.js?v=ggt18';
+import { initAudio, setSound, sfx } from './audio.js?v=ggt18';
+import { S, persist, newGame } from './save.js?v=ggt18';
+import { HUD } from './hud.js?v=ggt18';
+import { UI } from './ui.js?v=ggt18';
+import { closePanel } from './uikit.js?v=ggt18';
+import { Game } from './game.js?v=ggt18';
+import { $ } from './util.js?v=ggt18';
+import { GEOM } from './map.js?v=ggt18';
+import { BUILDINGS } from './bld.js?v=ggt18';
+import { loadFont } from './text3d.js?v=ggt18';
 const app = window.__pt = { state: 'boot', paused: true, game: null, ready: false, busy: false };
 function setLoad(p, t) { const b = $('loadBar'); if (b) b.style.width = p + '%'; if (t) $('loadTxt').textContent = t; }
 async function boot() {
