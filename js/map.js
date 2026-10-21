@@ -8,6 +8,7 @@ import { shell, part, onSide } from './bld.js?v=ggt17';
 import { STORES } from './data.js?v=ggt17';
 import { storeBuilding } from './stores.js?v=ggt17';
 import { supplierDetail } from './supfill.js?v=ggt17';
+import { buildOnline, treeOk } from './online.js?v=ggt17';
 import { PI, R, pick, BRIGHT, rcyl, lathe, sph, cyl, cone, torus, capsule, tube, star, heart, blobGeo, wedge, txt, poster, wallWord, clockW, pendant, rack, pallet, cartStatic, planter, awning, trash, bags, produceCrate, grokLogo } from './art.js?v=ggt17';
 export const SPOTS = {}; export const GEOM = {};
 export const ENV = { sunDir: [0.5, 0.8, 0.32], sunColor: 0xfff3e0, sunI: 2.5, hemiSky: 0xdaf0ff, hemiGround: 0x7a9a5a, hemiI: 0.62, skyTop: 0x3b8beb, skyMid: 0xb3dcff, skyBot: 0xeef8ff, fog: 0xdcefff, fogD: 0.0036, exposure: 1.0, envI: 0.85, bloomT: 1.05, bloomS: 0.32, sunDisc: 1, stars: 0 };
@@ -49,14 +50,14 @@ export function buildMap(w) {
       w.add('g', rbox(0.3, 1.5, 3.6, 0.1), 0x16a34a, AX - 4, 1.4, 22.6); txt(w, 'SHOPSVILLE', AX - 4.17, 1.65, 22.6, -PI / 2, 0.36, 0xffffff); txt(w, 'POP. HUNGRY', AX - 4.17, 1.05, 22.6, -PI / 2, 0.2, 0xfef3c7); w.add('x', cyl(10), 0x334155, AX - 4, 0, 22.6, 0, 0, 0, 0.07, 0.7, 0.07); } }
   // trees / bushes around the edges and between lots
   { const spots = [[-90, -40], [-88, -10], [-92, 20], [-90, 40], [-92, 70], [-88, 100], [90, -36], [92, -4], [94, 24], [-40, 28], [-28, 4], [28, 4], [-84, 30], [84, 34], [-78, 104], [-30, 125], [30, 125], [0, 124], [-60, 124], [60, 124], [-98, 50], [-12, 96], [-26, 100]];
-    spots.forEach(([x, z], i) => K.tree(w, x, z, 1.1 + (i % 4) * 0.2, i % 6 === 0 ? 1 : 0)); for (let i = 0; i < 40; i++) { const a = i / 40 * PI * 2, x = Math.cos(a) * 125, z = 27 + Math.sin(a) * (Math.sin(a) < 0 ? 134 : 112); if (z < -56 && z > -100 && Math.abs(x) < 106) continue; K.tree(w, x, z, 1.4 + (i % 3) * 0.3, 0); }
+    spots.filter(([x, z]) => treeOk(x, z)).forEach(([x, z], i) => K.tree(w, x, z, 1.1 + (i % 4) * 0.2, i % 6 === 0 ? 1 : 0)); for (let i = 0; i < 40; i++) { const a = i / 40 * PI * 2, x = Math.cos(a) * 125, z = 27 + Math.sin(a) * (Math.sin(a) < 0 ? 134 : 112); if (z < -56 && z > -100 && Math.abs(x) < 106) continue; K.tree(w, x, z, 1.4 + (i % 3) * 0.3, 0); }
     [[-34, 22], [-26, 22], [26, 22], [34, 22], [-34, 46], [26, 46], [34, 46], [-34, -4], [34, -4], [-80, 46], [80, 46]].forEach(([x, z], i) => { K.bush(w, x, z, 1 + (i % 3) * 0.2); K.bush(w, x + 1.3, z + 0.4, 0.8); });
     for (let i = 0; i < 10; i++) { const a = i / 10 * PI * 2 + 0.3; w.add('m', blobGeo(i * 3, 0.15, 2), 0xffffff, Math.cos(a) * 220, 60 + (i % 3) * 12, 27 + Math.sin(a) * 220, 0, a, 0, 22, 6, 12); } }
   // ---------------- stores ----------------
   STORES.forEach((d) => { const r = storeBuilding(w, d, d.id === 's1'); GEOM[d.id] = r.G; });
   // Shopsville Shopping Row sidewalk lamps + a row sign
   w.region = 'out'; [-49, -24, 1, 26, 51, 76].forEach((x) => K.lampPost(w, x, -61.4)); { const X = 103.5, Z = -72; w.add('g', rbox(0.4, 2.4, 6, 0.15), 0x1d4ed8, X, 2.6, Z); txt(w, 'SHOPPING ROW', X - 0.22, 2.9, Z, -PI / 2, 0.4, 0xffffff); txt(w, 'SHOPS · SUPERCENTER', X - 0.22, 2.3, Z, -PI / 2, 0.22, 0xfde68a); w.add('x', cyl(10), 0x334155, X, 0, Z, 0, 0, 0, 0.1, 1.4, 0.1); w.solid(X - 0.3, 0, Z - 3, X + 0.3, 3.8, Z + 3); }
-  buildDC(w); buildRatita(w); buildTortuga(w); buildRuff(w); buildHall(w); buildFarm(w); buildLab(w); supplierDetail(w);
+  buildDC(w); buildRatita(w); buildTortuga(w); buildRuff(w); buildHall(w); buildFarm(w); buildLab(w); supplierDetail(w); buildOnline(w, SPOTS);
   w.region = 'out';
 }
 // ---------------- distribution center ----------------

@@ -22,6 +22,8 @@ import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, GOALS, EMPIR
 import { Decor } from './decor.js?v=ggt17';
 import { MG_NAMES } from './mg.js?v=ggt17';
 import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt17';
+import { Online } from './onlinesim.js?v=ggt17';
+import { OWN as OP_OWN } from './online.js?v=ggt17';
 const PI = Math.PI;
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _c = new THREE.Color();
 function meshFrom(parts) { const g = new THREE.Group(); for (const k in parts) { const b = parts[k]; if (!b.parts.length) continue; const m = new THREE.Mesh(compact(b.build(), k), MATS[k]); m.castShadow = k !== 'l' && k !== 'e'; m.receiveShadow = true; g.add(m); } return g; }
@@ -38,12 +40,12 @@ export class Game {
     for (const d of STORES) { const G = GEOM[d.id]; this.fixtures.attach(this.scene, d.id, G.slots); this.slotSol[d.id] = G.slots.map((sl) => { const o = {}; const mk = (k) => FIXSOLID[k].map(([a, b, c, e, h]) => w.solid(sl.x + a, 0, sl.z + b, sl.x + c, h, sl.z + e, { dyn: true, off: true }));
       if (sl.kind === 'floor') { o.floor = mk('floor'); o.promo = mk('promo'); } else { o.register = mk('register'); o.selfck = mk('selfck'); } return o; }); }
     this.dcSol = w.dyn.filter((s) => s.tag === 'dc'); this.decor = new Decor(this.scene, w, GEOM); this.decor.upload = this.upload;
-    this.crowd = new Crowd(this.scene, 72); this.sim = new Sim();
+    this.crowd = new Crowd(this.scene, OP_OWN ? 96 : 72); this.sim = new Sim();
     this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.place([0, 0.1, 2], PI);
     this.cam = new FollowCam(); this.cam.yaw = 0; this.cam.snap = true;
     this.inB = null; this.acts = []; this.act = null; this.npcs = []; this.people = []; this.staffAg = {}; this.cameoPets = {};
     this.buildPets(); this.buildPeople(); this.buildTrucks(); this.buildSpills(); this.buildBubbles(); this.buildCarry();
-    this.refreshStores(true); this.setVis(true);
+    this.refreshStores(true); this.online = new Online(this); this.setVis(true);
   }
   add(o) { this.scene.add(o); return o; }
   // ---------------- characters ----------------
@@ -196,6 +198,7 @@ export class Game {
     push(SP.labMachine[0], SP.labMachine[1], 2.0, '📦 Run the packing machine', () => this.mg('load', {}, (sc) => this.reward('stock', sc)));
     push(SP.fountain[0], SP.fountain[1], 2.2, '🪙 Toss a coin in the fountain', () => { if (S.money >= 1) S.money -= 1; sfx('splash'); toast(['🍎 You wished for a five-star inspection.', '✨ The fountain says: "Clean up on aisle 5."', '💧 Splash! A shopping-cart-shaped ripple.'][(Math.random() * 3) | 0]); });
     push(SP.foodtruck[0], SP.foodtruck[1], 2.2, '🌮 Buy a taco ($3)', () => { if (this.spend(3)) toast('🌮 Delicious. Grok Tacos uses Fernhill tomatoes.'); });
+    this.online.gather(push);
     let best = null; for (const a of out) if (!best || a.d < best.d) best = a; return best; }
   spyDept(sid, dept) { const st = S.stores[sid], myId = storeIds().find((k) => mine(k) && capOf(S.stores[k], dept)) || 's1', my = S.stores[myId]; S.spy = S.spy || {}; S.spy[sid + dept] = S.day; const theirs = Math.round(DEPTS[dept].val * st.price[dept] * 100) / 100, mineP = Math.round(DEPTS[dept].val * my.price[dept] * 100) / 100;
     sfx('check'); talk([['Price tag', `${STORE[sid].name} ${DEPTS[dept].e} ${DEPTS[dept].n}: about $${theirs.toFixed(2)} an item. Yours: $${mineP.toFixed(2)}. ${theirs < mineP ? 'They\'re cheaper here!' : theirs > mineP ? 'You\'re cheaper. Nice!' : 'Same price.'}`]]); if (!S.spyXp || S.spyXp !== S.day + dept) { S.spyXp = S.day + dept; if (S.mode === 'career') this.reward('help', 0.5, ' · market research'); } }
@@ -214,7 +217,7 @@ export class Game {
     this.fxT = (this.fxT || 0) - dt; if (this.fxT <= 0) { this.fxT = 0.6; this.refreshStores(); }
     // npcs
     for (const p of this.npcs) { if (p.walk) { const t = p.walk[p.wi]; const dx = t[0] - p.x, dz = t[1] - p.z, d = Math.hypot(dx, dz); const near = Math.hypot(me.x - p.x, me.z - p.z) < 2.6; if (near) p.speed = 0; else if (p.wait > 0) { p.wait -= dt; p.speed = 0; } else if (d < 0.3) { p.wi = (p.wi + 1) % p.walk.length; p.wait = 1 + Math.random() * 2; } else { const sp = 1.6; p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; p.yaw = Math.atan2(dx, dz); p.speed = sp; } p.noTurn = !near; } if (p.root.visible && inView(p.x, p.y + 0.5, p.z, 1.5)) animPet(p, dt, me); }
-    this.stepStaff(dt); this.stepWalkers(dt); this.draw(dt);
+    this.stepStaff(dt); this.stepWalkers(dt); this.online.update(dt); this.draw(dt);
     // nearest interaction
     this.actT = (this.actT || 0) - dt; if (this.actT <= 0) { this.actT = 0.15; this.act = busy ? null : this.gather(); app.hud.setAct(this.act); }
     if (this.act && !busy && edge('act')) { sfx('click'); const a = this.act; this.act = null; app.hud.setAct(null); a.f(); }
@@ -241,6 +244,7 @@ export class Game {
     if (this.sim.insp) { const I = this.sim.insp; if (!I.look) I.look = Object.assign(this.crowd.look(77, false), { shirt: 0x0f766e }); I.vis = this.storeVisible(I.sid); list.push(I); }
     for (const id of ['s1', 's2', 's3']) for (const c of this.sim.carts[id]) { c.vis = mine(id) && Math.hypot(c.x - me.x, c.z - me.z) < 60; loose.push(c); }
     for (let i = 0; i < this.cartsHeld; i++) { const yw = me.yaw, k = 1.0 + i * 0.55; loose.push({ x: me.x + Math.sin(yw) * k, z: me.z + Math.cos(yw) * k, ry: yw + PI, vis: true }); }
+    this.online.agents(list);
     // only animate what's on screen
     for (const a of list) if (a.vis && !inView(a.x, 1, a.z, 1.4)) a.vis = false;
     this.crowd.draw(list, loose, this.T);
@@ -257,7 +261,7 @@ export class Game {
     let bi = 0; const B = this.bubbles; const bub = (x, y, z, k) => { if (bi >= B.length) return; const s = B[bi++]; s.visible = true; s.position.set(x, y, z); if (s.material.map !== this.bubTex[k]) { s.material.map = this.bubTex[k]; s.material.needsUpdate = true; } };
     const sid = this.curStore(); if (sid) for (const a of this.sim.ag[sid]) { if (!a.vis) continue; if (Math.hypot(a.x - me.x, a.z - me.z) > 22) continue; if (a.help && a.st !== 'out' && mine(sid)) bub(a.x, 2.35, a.z, 'help'); else if (a.atYou && a.st === 'q') bub(a.x, 2.35, a.z, 'you'); else if (a.st === 'out' && a.mood < 0.5) bub(a.x, 2.35, a.z, a.oos ? 'oos' : 'angry'); }
     for (let i = this.cashFx.length - 1; i >= 0; i--) { const c = this.cashFx[i]; c.t -= dt; if (c.t <= 0) { this.cashFx.splice(i, 1); continue; } bub(c.x, 2.0 + (1.2 - c.t) * 0.9, c.z, 'cash'); }
-    for (; bi < B.length; bi++) B[bi].visible = false; }
+    for (; bi < B.length; bi++) B[bi].visible = false; this.online.draw(dt); }
   // ---------------- day cycle ----------------
   dayEnd() { const rep = { day: S.day, stores: [], wages: 0, rent: 0, career: S.mode === 'career' }; for (const sid of storeIds()) { if (!mine(sid)) continue; const st = S.stores[sid]; const wages = st.staff.reduce((a, s) => a + (s.cameo ? 40 : (ROLES[s.role] || { wage: 50 }).wage), 0); const rent = sid === 's1' ? 120 : 160; rep.stores.push({ n: STORE[sid].short, rev: st.rev, cust: st.cust, angry: st.angry, rep: Math.round(st.rep), grade: st.grade }); if (S.mode === 'boss' || st.owned) { rep.wages += wages; rep.rent += rent; } }
     if (S.mode === 'boss') { S.money -= rep.wages + rep.rent; if (S.loan) { const i = Math.round(S.loan * 0.05); S.money -= i; rep.interest = i; } }
@@ -276,5 +280,5 @@ export class Game {
   render(dt) { followShadow(this.me.x, this.me.y, this.me.z); }
   refreshMe() { const p = [this.me.x, this.me.y, this.me.z], y = this.me.yaw; this.me.removeFrom(this.scene); this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.place(p, y); this.me.setVisible(!this.fp); this.attachCarry(); }
   ensureStores() { for (const d of STORES) if (d.rival && !S.stores[d.id]) { const st = S.stores[d.id] = newStore(d.id, d.id === 'rival' ? 'rival' : d.id === 'rival2' ? 'rival2' : 1, d.type, d.id === 'mega' ? 6 : 2); st.staff = [{ role: 'cashier', name: d.short + ' Cashier', skill: 2 }, { role: 'stocker', name: d.short + ' Stocker', skill: 2 }, { role: 'manager', name: d.boss || 'Max Markdown', skill: 3 }]; } }
-  startMode() { this.ensureStores(); const G = GEOM.s1; this.me.place([G.doorX, 0.1, G.front + 6], PI); this.cam.yaw = 0; this.cam.snap = true; this.sim = new Sim(); this.carry = null; this.cartsHeld = 0; this.caseM.visible = false; if (S.mode === 'career' && (!S.daily || S.daily.day !== S.day)) S.daily = { day: S.day, t: dailyFor(S.rank, S.day, !typeOf(S.stores.s1).carts) }; this.refreshStores(true); }
+  startMode() { this.ensureStores(); const G = GEOM.s1; this.me.place([G.doorX, 0.1, G.front + 6], PI); this.cam.yaw = 0; this.cam.snap = true; this.sim = new Sim(); this.carry = null; this.cartsHeld = 0; this.caseM.visible = false; if (this.online) this.online.reset(); if (S.mode === 'career' && (!S.daily || S.daily.day !== S.day)) S.daily = { day: S.day, t: dailyFor(S.rank, S.day, !typeOf(S.stores.s1).carts) }; this.refreshStores(true); }
 }
