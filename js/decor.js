@@ -7,6 +7,7 @@ import { STORE, TYPES } from './data.js?v=ggt17';
 import { bevWall, wallShelf, BOT } from './stores.js?v=ggt17';
 import { PI, R, pick, BRIGHT, rcyl, lathe, sph, cyl, cone, torus, capsule, star, blobGeo, txt, wallWord, cartStatic, grokLogo, frameArt } from './art.js?v=ggt17';
 import { textGeo } from './text3d.js?v=ggt17';
+import { OWN as OP_OWN } from './online.js?v=ggt17';
 const SHOE = [0xef4444, 0x111827, 0xffffff, 0x2563eb, 0x7c3aed, 0x92400e, 0xfacc15, 0x22c55e, 0xf97316];
 // one themed wall run, local x in [-L/2, L/2], wall at local z=0, facing +z
 function units(T, L, kind, ac) { const n = Math.max(1, Math.floor(L / 1.25)), uw = L / n;
@@ -153,7 +154,7 @@ function frontDetail(w, d, G, type, ac) { const cx = G.cx, F = d.z1, sm = !!d.st
   // specialty corners (zone runs along z beside the side walls)
   const [kl, kr] = CORNERS[type] || CORNERS.grocery; const L = zb - za, zc = (za + zb) / 2;
   if (minX - d.x0 > 2.6) { const T = w.tf(d.x0 + 0.3, 0, zc, PI / 2); cornerKind(T, L, minX - d.x0 - 0.3, kl, ac); }
-  if (d.x1 - maxX > 2.6) { const T = w.tf(d.x1 - 0.3, 0, zc, -PI / 2); cornerKind(T, L, d.x1 - maxX - 0.3, kr, ac); }
+  if (d.x1 - maxX > 2.6 && !(OP_OWN && d.id === 's1')) { const T = w.tf(d.x1 - 0.3, 0, zc, -PI / 2); cornerKind(T, L, d.x1 - maxX - 0.3, kr, ac); } // DLC #46: the Online Store desk takes this corner
   // entrance mat + WELCOME + seasonal pumpkins & hay either side of the door
   w.add('m', rbox(4.2, 0.02, 2.0, 0.01), 0x1f2937, cx, 0.015, F - 1.2); { const g = textGeo('WELCOME', 0.3, 0.02); if (g) w.add('g', g, 0xfacc15, cx, 0.03, F - 1.2, -PI / 2, 0, 0); }
   for (const s of [-1, 1]) { const x = cx + s * 3.3; if (sm && Math.abs(x - cx) > d.x1 - cx - 1) continue; w.slab('m', 0xd6b25e, x, 0, F - 0.8, 1.0, 0.45, 0.7, 0.06); for (let k = 0; k < 4; k++) { const r = 0.16 + R() * 0.08; w.add('g', sph(10), pick([0xf97316, 0xea580c, 0xfb923c]), x - 0.3 + k * 0.2, 0.45 + r * 0.8, F - 0.8 + (k % 2) * 0.15 - 0.07, 0, R() * 3, 0, r, r * 0.8, r); } w.add('g', sph(10), 0xf97316, x + 0.55, 0.2, F - 0.5, 0, 0, 0, 0.22, 0.18, 0.22); }
