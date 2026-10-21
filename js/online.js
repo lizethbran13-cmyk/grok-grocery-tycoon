@@ -71,7 +71,8 @@ function buildShipCenter(w, L) { const { x0, z0, x1, z1, dockX, doorX } = WH;
   K.floor(w, x0, z1 + 0.5, x1, 6.6, 'tile', 0.015, 0x6b7280, 0x636a76, 4); for (let z = z1 + 3; z < 6; z += 3) w.add('l', rbox(0.18, 0.02, 1.6, 0.01), 0xffffff, dockX, 0.04, z, 0, 0, 0, 1, 1, 1, 0);
   K.hazard(w, dockX, z1 + 2.2, 5.2, 2.6);
   for (const x of [dockX - 3.4, dockX + 3.4, doorX - 1.8, doorX + 1.8]) { w.add('g', cyl(12), 0xfacc15, x, 0, z1 + 1.4, 0, 0, 0, 0.14, 1.1, 0.14); w.solid(x - 0.15, 0, z1 + 1.25, x + 0.15, 1.1, z1 + 1.55); }
-  K.lampPost(w, x0 + 1.2, 2); K.lampPost(w, x1 - 1.2, 2); planter(w, doorX + 2.6, z1 + 1.4, 2.0, 0, 0xfacc15); trash(w, doorX - 3.1, z1 + 1.2, 0x0f766e); pallet(w, x0 + 1.6, z1 + 2.2, 0.1, 3); pallet(w, x0 + 1.6, z1 + 4.0, -0.1, 2);
+  K.lampPost(w, x0 + 1.2, 2); K.lampPost(w, x1 - 1.2, 2); K.bench(w, 101.6, z1 + 3.2, -PI / 2, 0x0f766e); K.bush(w, x0 + 0.8, z1 + 6.5, 0.8); K.bush(w, x1 - 0.8, z1 + 6.5, 0.8);
+  { const X = 85.2, Z = 4.6; w.slab('g', 0x0f766e, X, 0, Z, 0.5, 3.2, 1.8, 0.08); w.add('g', rbox(0.56, 0.5, 1.9, 0.06), 0xfacc15, X, 3.0, Z); txt(w, 'SHIP', X + 0.3, 2.2, Z, PI / 2, 0.3, 0xffffff); txt(w, 'CENTER', X + 0.3, 1.75, Z, PI / 2, 0.22, 0xffffff); txt(w, 'SHIP', X - 0.3, 2.2, Z, -PI / 2, 0.3, 0xffffff); txt(w, 'CENTER', X - 0.3, 1.75, Z, -PI / 2, 0.22, 0xffffff); } planter(w, doorX + 2.6, z1 + 1.4, 2.0, 0, 0xfacc15); trash(w, doorX - 3.1, z1 + 1.2, 0x0f766e); pallet(w, x0 + 1.6, z1 + 2.2, 0.1, 3); pallet(w, x0 + 1.6, z1 + 4.0, -0.1, 2);
   { const T = w.tf(101, 0, -9, 0); for (let i = 0; i < 4; i++) T.add('x', torus(0.08, 16, PI), 0x94a3b8, -0.9 + i * 0.6, 0, 0, 0, PI / 2, 0, 0.35, 0.5, 0.35); T.solid(-1.2, 0, -0.1, 1.0, 0.5, 0.1); }
   w.region = 'in_wh'; const R = (x, z, ry, n) => rack(w, x, z, ry, n, 5.0, 1), PX = [89.5, 93, 96.5];
   // storage racks (3 double rows) + floor lanes
@@ -89,7 +90,11 @@ function buildShipCenter(w, L) { const { x0, z0, x1, z1, dockX, doorX } = WH;
   for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { const bx = 96.4 + i * 2.0, bz = -33.4 + j * 2.4; pallet(w, bx, bz, 0, 4); w.add('e', rbox(1.25, 1.1, 1.05, 0.08), 0xe0f2fe, bx, 0.75, bz, 0, 0, 0, 1, 1, 1, 0.1); w.solid(bx - 0.65, 0, bz - 0.55, bx + 0.65, 1.3, bz + 0.55); }
   txt(w, 'BULK', 98.4, 0.08, -29.4, 0, 0.3, 0x0f766e); K.hazard(w, 98.4, -32.2, 6.4, 5.6);
   // staging: parcel cages + outbound pallets near the dock door
-  for (let i = 0; i < 3; i++) { const cx = 85.4 + i * 1.6; w.add('x', rbox(1.3, 1.8, 1.0, 0.04), 0x94a3b8, cx, 0.9, -18.0, 0, 0, 0, 1, 1, 1); for (let k = 0; k < 4; k++) K.parcel(w, cx - 0.3 + (k % 2) * 0.6, 0.1 + Math.floor(k / 2) * 0.55, -18.0, 0.8); w.solid(cx - 0.65, 0, -18.5, cx + 0.65, 1.8, -17.5); }
+  const cage = (cx, cz, n) => { for (const [dx, dz] of [[-0.62, -0.47], [0.62, -0.47], [-0.62, 0.47], [0.62, 0.47]]) w.add('x', cyl(8), 0x94a3b8, cx + dx, 0.08, cz + dz, 0, 0, 0, 0.025, 1.75, 0.025); for (const y of [0.1, 1.82]) { w.add('x', rbox(1.28, 0.04, 0.04, 0.01), 0x94a3b8, cx, y, cz - 0.47); w.add('x', rbox(1.28, 0.04, 0.04, 0.01), 0x94a3b8, cx, y, cz + 0.47); w.add('x', rbox(0.04, 0.04, 0.98, 0.01), 0x94a3b8, cx - 0.62, y, cz); w.add('x', rbox(0.04, 0.04, 0.98, 0.01), 0x94a3b8, cx + 0.62, y, cz); }
+    for (let k = 0; k < n; k++) K.parcel(w, cx - 0.3 + (k % 2) * 0.6, 0.12 + Math.floor(k / 2) * 0.52, cz + (k % 3 - 1) * 0.12, 0.8); [-0.4, 0.4].forEach((dx) => w.add('m', torus(0.4, 10), 0x111827, cx + dx, 0.06, cz + 0.4, 0, PI / 2, 0, 0.07, 0.07, 0.08)); w.solid(cx - 0.65, 0, cz - 0.5, cx + 0.65, 1.85, cz + 0.5); };
+  for (let i = 0; i < 3; i++) cage(85.4 + i * 1.5, -18.0, 4 + (i % 2) * 2); cage(94.2, -18.3, 5); cage(95.7, -18.3, 3);
+  for (let k = 0; k < 5; k++) K.parcel(w, 97.4 + (k % 2) * 0.55, Math.floor(k / 2) * 0.5, -19.4 + (k % 3) * 0.2, 0.85); w.solid(97.0, 0, -19.8, 98.1, 1.4, -18.9);
+  { const T = w.tf(87.2, 0, -20.6, 0.2); T.slab('x', 0x475569, 0, 0, 0, 1.2, 0.12, 1.2, 0.03); T.box('l', 0x22c55e, 0.55, 0.12, 0.55, 0.12, 0.02, 0.12, 0.01, 0.6); T.add('x', cyl(8), 0x334155, 0.6, 0.12, 0.6, 0, 0, 0, 0.03, 1.0, 0.03); T.box('x', 0x111827, 0.6, 1.1, 0.6, 0.3, 0.2, 0.06, 0.03); txt(w, 'SCALE', 87.4, 0.25, -21.25, PI, 0.09, 0xffffff); }
   pallet(w, 94.5, -19.0, 0, 5); K.hazard(w, dockX, -17.4, 5.0, 1.6);
   w.add('g', rbox(4.6, 0.6, 0.1, 0.05), 0x0f766e, dockX, 5.4, -16.45); txt(w, 'DOCK 1 · OUTBOUND', dockX, 5.32, -16.55, PI, 0.22, 0xffffff);
   // office (NE corner): desk, screens, filing, whiteboard, plant, team photos, employee of the month

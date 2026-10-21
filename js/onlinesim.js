@@ -60,7 +60,7 @@ export class Online {
     this.drivers = [0, 1].map((i) => { const a = this.person(4631 + i * 5, true, 0x7c3aed, D.cx, D.z + 2.6); a.reg = 's1'; a.role = 'driver'; a.home = [20.5 + i * 0.9, -7.75]; a.idx = i; a.cap = true; return a; });
     this.packers = [0, 1, 2].map((i) => { const px = [89.5, 93, 96.5][i]; const a = this.person(4651 + i * 11, true, 0xf59e0b, px, -24.5); a.reg = 'wh'; a.role = 'packer'; a.home = [px, -24.5]; a.ry = PI; a.idx = i; a.cap = true; return a; });
     this.whBoss = this.person(4691, true, 0x0f766e, 99, -41.6); this.whBoss.reg = 'wh'; this.whBoss.ry = PI;
-    this.loader = this.person(4699, true, 0xf59e0b, 92, -19.5); this.loader.reg = 'wh'; this.loader.cap = true; this.loader.loop = [[88, -19.6], [92, -19.6], [92, -21.4], [88, -21.4]]; this.loader.wi = 0;
+    this.loader = this.person(4699, true, 0xf59e0b, 92, -19.5); this.loader.reg = 'wh'; this.loader.cap = true; this.loader.loop = [[88.8, -19.5], [91.3, -19.5], [91.3, -21.5], [88.8, -21.5]]; this.loader.wi = 0;
     for (const a of [...this.pickers, ...this.drivers, ...this.packers]) a.st = 'idle'; }
   petModel(id) { let p = this.pets[id]; if (!p) { p = this.pets[id] = makePet(id, { s: id === 'torty' ? 0.85 : 1.15 }); p.y = 0.06; this.g.add(p.root); p.root.visible = false; } return p; }
   homeVisible(id) { const n = this.g.npcs.find((q) => q.id === id); return !!(n && n.root.visible) || this.g.petAway(id); }
