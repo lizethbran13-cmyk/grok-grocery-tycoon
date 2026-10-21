@@ -47,6 +47,8 @@ export function sfx(name) {
     case 'bell': [1318, 1046, 1318, 1046].forEach((f, i) => tone(f, 0.35, 'triangle', 0.18, 0, i * 0.22)); break;
     case 'tune': [523, 659, 784, 659, 880, 784, 659, 523].forEach((f, i) => tone(f, 0.16, 'square', 0.12, 0, i * 0.14)); break;
     case 'hit': tone(700, 0.08, 'square', 0.12, -400); break;
+    case 'crash': noise(0.45, 0.3, 900); tone(110, 0.35, 'sawtooth', 0.2, -60); noise(0.2, 0.15, 2500, 0.12); break;
+    case 'bump': noise(0.12, 0.16, 600); tone(160, 0.1, 'square', 0.08, -40); break;
   }
 }
 // music: simple bouncy sequencer

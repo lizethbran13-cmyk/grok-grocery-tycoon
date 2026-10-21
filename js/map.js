@@ -8,7 +8,7 @@ import { shell, part, onSide } from './bld.js?v=ggt18';
 import { STORES } from './data.js?v=ggt18';
 import { storeBuilding } from './stores.js?v=ggt18';
 import { supplierDetail } from './supfill.js?v=ggt18';
-import { buildOnline, treeOk } from './online.js?v=ggt18';
+import { buildOnline, treeOk, OWN as OWN52 } from './online.js?v=ggt18';
 import { PI, R, pick, BRIGHT, rcyl, lathe, sph, cyl, cone, torus, capsule, tube, star, heart, blobGeo, wedge, txt, poster, wallWord, clockW, pendant, rack, pallet, cartStatic, planter, awning, trash, bags, produceCrate, grokLogo } from './art.js?v=ggt18';
 export const SPOTS = {}; export const GEOM = {};
 export const ENV = { sunDir: [0.5, 0.8, 0.32], sunColor: 0xfff3e0, sunI: 2.5, hemiSky: 0xdaf0ff, hemiGround: 0x7a9a5a, hemiI: 0.62, skyTop: 0x3b8beb, skyMid: 0xb3dcff, skyBot: 0xeef8ff, fog: 0xdcefff, fogD: 0.0036, exposure: 1.0, envI: 0.85, bloomT: 1.05, bloomS: 0.32, sunDisc: 1, stars: 0 };
@@ -24,7 +24,7 @@ function seats(w, x, z, n, col, ry = 0) { for (let i = 0; i < n; i++) { const T 
 export function buildMap(w) {
   K.propSeed && K.propSeed(777); const L = w.lights; w.region = 'out';
   // ground
-  { const N = 90, S = 340; const g = new THREE.PlaneGeometry(S, S, N, N); g.rotateX(-PI / 2); g.translate(0, 0, 27); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.max(Math.abs(x) / 120, z < 27 ? (27 - z) / 130 : (z - 27) / 110); const hill = r > 1 ? Math.pow(r - 1, 1.4) * 70 * (0.7 + 0.3 * Math.sin(x * 0.05) * Math.cos(z * 0.04)) : 0; p.setY(i, hill - 0.02); } g.computeVertexNormals();
+  { const N = 90, S = 340, EX = OWN52 ? 150 : 0; const g = new THREE.PlaneGeometry(S + EX, S, N + Math.round(EX / 3.8), N); g.rotateX(-PI / 2); g.translate(EX / 2, 0, 27); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.max(x > 0 && EX ? x / 240 : Math.abs(x) / 120, z < 27 ? (27 - z) / 130 : (z - 27) / 110); const hill = r > 1 ? Math.pow(r - 1, 1.4) * 70 * (0.7 + 0.3 * Math.sin(x * 0.05) * Math.cos(z * 0.04)) : 0; p.setY(i, hill - 0.02); } g.computeVertexNormals();
     w.addFn('m', g, (c, x, y, z) => { const n = Math.sin(x * 0.19) * Math.cos(z * 0.15) * 0.5 + Math.sin(x * 0.05 + z * 0.07) * 0.5; c.setHSL(0.27 + n * 0.025, 0.52, 0.42 + n * 0.05 + Math.min(0.08, y * 0.004)); }, 0, 0, 0); w.solid(-170, -3, -150, 170, 0, 200, { floor: true }); }
   // roads: asphalt, dashed centre lines, sidewalks, crosswalks
   { const RW = 10, { ew, ns, x0, x1, z0, z1 } = ROADS;

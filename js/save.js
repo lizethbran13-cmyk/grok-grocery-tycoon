@@ -15,7 +15,8 @@ const DEF = () => ({ v: 1, mode: '', name: '', look: { skin: 1, hair: 0, hairC: 
   stores: {}, dc: false, trucks: 1, brand: { on: false, lines: [] }, unlock: { selfck: false, cold: false }, goals: {}, daily: { day: 0, t: {} }, cameos: {}, insp: { next: 3 }, loan: 0,
   stats: { served: 0, revenue: 0, days: 0, inspections: 0, aGrades: 0, carts: 0, bags: 0, cleans: 0, helps: 0, stocks: 0 }, news: [], badges: {}, best: {}, played: {}, talks: {}, opts: { sound: true, music: true }, seenHow: false, plays: 0 });
 export let S = load();
-function load() { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.v === 1) { const d = DEF(); const o = Object.assign(d, s); for (const k of ['look', 'brand', 'unlock', 'goals', 'daily', 'cameos', 'insp', 'stats', 'badges', 'best', 'played', 'talks', 'opts']) o[k] = Object.assign(DEF()[k], s[k] || {}); return o; } } catch (e) {} return DEF(); }
+try { if (S.bonus52 === 'gift') localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} // patch #52: the one-time $3,000 gift sticks even if you close the game right away
+function load() { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.v === 1) { const d = DEF(); const o = Object.assign(d, s); for (const k of ['look', 'brand', 'unlock', 'goals', 'daily', 'cameos', 'insp', 'stats', 'badges', 'best', 'played', 'talks', 'opts']) o[k] = Object.assign(DEF()[k], s[k] || {}); if (!o.gift52 && o.mode) { o.money = (o.money || 0) + 3000; o.gift52 = 1; o.bonus52 = 'gift'; } return o; } } catch (e) {} return DEF(); }
 export function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 export function resetSave() { const d = DEF(); for (const k in S) delete S[k]; Object.assign(S, d); persist(); return S; }
 // start a new game in career (A) or boss (B) mode, keeping your name + look
@@ -31,5 +32,6 @@ export function newGame(mode, type = 'grocery') { const keep = { name: S.name, l
   S.stores.rival2.staff = [{ role: 'cashier', name: 'Quick Quentin', skill: 3 }, { role: 'cashier', name: 'Quick Quinn', skill: 3 }, { role: 'stocker', name: 'Speedy Sue', skill: 3 }, { role: 'manager', name: 'Ms. Quinn', skill: 4 }];
   S.stores.rival.staff = [{ role: 'cashier', name: 'Bonanza Bob', skill: 2 }, { role: 'cashier', name: 'Bonanza Betty', skill: 2 }, { role: 'cashier', name: 'Bonanza Bill', skill: 2 }, { role: 'stocker', name: 'Bonanza Bea', skill: 3 }, { role: 'manager', name: 'Max Markdown', skill: 3 }];
   S.news = [{ day: 1, t: mode === 'career' ? 'New courtesy clerk starts at Grok Grocery Main St. Grandpa Gus: "Mind the cart corral."' : 'A brand-new boss takes over Grok Grocery Main St. Bargain Bonanza is nervous!' }];
+  S.money += 3000; S.gift52 = 1; S.bonus52 = 'new'; // patch #52: welcome bonus for new players
   persist(); return S; }
 export function news(t) { S.news.unshift({ day: S.day, t }); if (S.news.length > 30) S.news.length = 30; }
