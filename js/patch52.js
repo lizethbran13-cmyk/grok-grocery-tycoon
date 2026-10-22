@@ -2,16 +2,16 @@
 // hand-off, and YOU behind the wheel: the Ship Center truck for 2-day shipping and the Grok Van for same-day delivery, with a GPS
 // route, real crashes (damage, repair bill, late parcels) and Torty's Tow back to the dock so you're never stuck.
 import * as THREE from 'three';
-import { E } from './engine.js?v=ggt19';
-import { IN } from './input.js?v=ggt19';
-import { S, persist } from './save.js?v=ggt19';
-import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt19';
-import { fmtClock } from './sim.js?v=ggt19';
-import { panel, toast, talk, talking } from './uikit.js?v=ggt19';
-import { sfx } from './audio.js?v=ggt19';
-import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt19';
-import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt19';
-import { makePet, animPet } from './pets.js?v=ggt19';
+import { E } from './engine.js?v=ggt20';
+import { IN } from './input.js?v=ggt20';
+import { S, persist } from './save.js?v=ggt20';
+import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt20';
+import { fmtClock } from './sim.js?v=ggt20';
+import { panel, toast, talk, talking } from './uikit.js?v=ggt20';
+import { sfx } from './audio.js?v=ggt20';
+import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt20';
+import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt20';
+import { makePet, animPet } from './pets.js?v=ggt20';
 const PI = Math.PI, $ = (id) => document.getElementById(id), $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const nowA = () => S.day * 1440 + S.time;
 // ---------------------------------------------------------------- delivery spots (Maple Lane + the new east side)
@@ -35,13 +35,19 @@ function plen(P) { let L = 0; for (let i = 1; i < P.length; i++) L += Math.hypot
 function labelSprite() { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true })); sp.renderOrder = 20; sp.visible = false; sp.userData = { cv, tex, t: '' }; return sp; }
 function setLabel(sp, t, col = '#0f766e') { if (sp.userData.t === t + col) return; sp.userData.t = t + col; const { cv, tex } = sp.userData, g = cv.getContext('2d'); g.clearRect(0, 0, 512, 128); g.font = '900 46px system-ui, -apple-system, sans-serif'; const w = Math.min(500, g.measureText(t).width + 44); g.fillStyle = col; g.strokeStyle = '#fff'; g.lineWidth = 7; g.beginPath(); g.roundRect((512 - w) / 2, 18, w, 84, 30); g.fill(); g.stroke(); g.beginPath(); g.moveTo(236, 100); g.lineTo(276, 100); g.lineTo(256, 124); g.closePath(); g.fillStyle = col; g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, 256, 61, 480); tex.needsUpdate = true; }
 export class Patch52 {
-  // camera pull-in: some streamed/merged meshes carry tiny culling spheres, so three's raycast would skip them. Swap in true
-  // bounds just for the camera ray (never changes what the game draws), NaN-safe, cached per geometry.
-  _camSwap(fn, cx, cz, R) { const sc = this.g.scene, sw = this._sw || (this._sw = []), cand = this._cand || (this._cand = []); const B = this._bsMap || (this._bsMap = new WeakMap()); sw.length = 0; cand.length = 0; const wp = this._wp || (this._wp = new THREE.Vector3());
-    const trueS = (gm) => { const pa = gm && gm.attributes && gm.attributes.position; if (!pa) return false; let bs = B.get(gm);if (bs === undefined) { const a = pa.array, st = pa.isInterleavedBufferAttribute ? 0 : pa.itemSize; bs = null; if (st === 3) { let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity; for (let i = 0; i < a.length; i += 3) { const x = a[i], y = a[i + 1], z = a[i + 2]; if (x !== x || y !== y || z !== z) continue; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (z < z0) z0 = z; if (z > z1) z1 = z; } if (x1 >= x0) { const c = new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); bs = new THREE.Sphere(c, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2); } } B.set(gm, bs); } return bs; }; const fixG = (gm) => { const bs = trueS(gm); if (bs && gm.boundingSphere && gm.boundingSphere.radius < bs.radius * 0.98) { sw.push(gm, gm.boundingSphere, gm.boundingBox); gm.boundingSphere = bs; gm.boundingBox = null; } };
-    sc.traverse((m) => { if (!m.isMesh || !m.visible) return; if (m.isInstancedMesh) { if (!m.count) return; let ib = B.get(m); if (!ib || ib.n !== m.count) { const sv = m.boundingSphere; m.boundingSphere = null; m.computeBoundingSphere(); ib = { n: m.count, s: m.boundingSphere && m.boundingSphere.radius === m.boundingSphere.radius ? m.boundingSphere.clone() : null }; m.boundingSphere = sv; B.set(m, ib); } if (!ib.s) return; wp.copy(ib.s.center).applyMatrix4(m.matrixWorld); if (Math.hypot(wp.x - cx, wp.z - cz) > R + ib.s.radius * m.matrixWorld.getMaxScaleOnAxis()) return; cand.push(m); fixG(m.geometry); if (m.boundingSphere !== ib.s) { sw.push(m, m.boundingSphere, m.boundingBox); m.boundingSphere = ib.s; } return; } const gm = m.geometry; const bs = trueS(gm); if (bs === false) return;
-      const use = bs || gm.boundingSphere; if (!use) return; wp.copy(use.center).applyMatrix4(m.matrixWorld); const sR = use.radius * m.matrixWorld.getMaxScaleOnAxis(); if (Math.hypot(wp.x - cx, wp.z - cz) > R + sR) return; cand.push(m); if (bs && gm.boundingSphere && gm.boundingSphere.radius < bs.radius * 0.98) { sw.push(gm, gm.boundingSphere, gm.boundingBox); gm.boundingSphere = bs; gm.boundingBox = null; } });
-    try { fn(); } finally { for (let i = sw.length - 3; i >= 0; i -= 3) { sw[i].boundingSphere = sw[i + 1]; sw[i].boundingBox = sw[i + 2]; } } }
+  // camera pull-in, cheap + reliable: the world's own collision boxes (what the walking camera uses) plus tree canopies
+  // (only trunks are solid, so each trunk-shaped box gets a leafy sphere on top). Returns 0..1 of the wanted distance.
+  camClear(v, px, py, pz, truck) { const w = this.g.world, near = this._cn || (this._cn = []); const ox = v.x, oy = 2.6, oz = v.z; let dx = px - ox, dy = py - oy, dz = pz - oz; const L = Math.hypot(dx, dy, dz) || 1; dx /= L; dy /= L; dz /= L;
+    const minK = (truck ? 3.6 : 2.8) / L; let k = 1; const inV = (s) => ox > s.min[0] - 0.4 && ox < s.max[0] + 0.4 && oz > s.min[2] - 0.4 && oz < s.max[2] + 0.4;
+    const hit = w.ray({ x: ox, y: oy, z: oz }, { x: dx, y: dy, z: dz }, L + 1.0, (s) => !s.nocam && !s.floor && s.cam !== false && !s.off && s.max[1] > 1.2 && !inV(s)); if (hit < L + 1.0) k = Math.min(k, (hit - 1.0) / L);
+    w.near(Math.min(ox, px) - 4, Math.min(oz, pz) - 4, Math.max(ox, px) + 4, Math.max(oz, pz) + 4, near);
+    for (const s of near) { if (s.off || s.dyn) continue; const sw = s.max[0] - s.min[0], sd = s.max[2] - s.min[2], h = s.max[1] - s.min[1]; if (s.min[1] > 0.3 || sw > 1.2 || sd > 1.2 || h < 1.8 || h / Math.max(sw, sd) < 3) continue;
+      const cx = (s.min[0] + s.max[0]) / 2, cz = (s.min[2] + s.max[2]) / 2, cy = s.max[1] + h * 0.35, R = h * 0.75 + 0.6; // leafy crown + a little air
+      const t = Math.max(0, Math.min(L + 1.2, (cx - ox) * dx + (cy - oy) * dy + (cz - oz) * dz)); const qx = ox + dx * t - cx, qy = oy + dy * t - cy, qz = oz + dz * t - cz; const dd = Math.hypot(qx, qy, qz);
+      if (dd < R) { const back = Math.sqrt(R * R - dd * dd); k = Math.min(k, (t - back - 0.3) / L); } (this._cr || (this._cr = [])).push(cx, cy, cz, R + 1.4); }
+    // camera bubble: a crown right BESIDE the camera (not on the line to the van) still fills the screen, so pull in until clear
+    const cr = this._cr || []; for (let it = 0; it < 8 && k > minK; it++) { const t = L * k, qx = ox + dx * t, qy = oy + dy * t + (1 - k) * 2.2, qz = oz + dz * t; let bad = false; for (let i = 0; i < cr.length; i += 4) if (Math.hypot(qx - cr[i], qy - cr[i + 1], qz - cr[i + 2]) < cr[i + 3]) { bad = true; break; } if (!bad) break; k -= 0.1; } cr.length = 0;
+    return Math.max(minK, Math.min(1, k)); }
   _inVeh(o, v) { const r = this.d && this.d.kind === 'truck' ? this.on.truckM : this.on.vanM[0]; while (o) { if (o === r) return true; o = o.parent; } return false; }
   constructor(on) { this.on = on; this.g = on.g; const sc = this.g.scene; this.T = 0;
     const chev = new THREE.Shape(); chev.moveTo(-0.55, -0.35); chev.lineTo(0, 0.35); chev.lineTo(0.55, -0.35); chev.lineTo(0.55, -0.05); chev.lineTo(0, 0.6); chev.lineTo(-0.55, -0.05); chev.closePath(); const cg = new THREE.ShapeGeometry(chev); cg.rotateX(-PI / 2); cg.rotateY(PI);
@@ -136,12 +142,7 @@ body.drv52 #toast{top:calc(env(safe-area-inset-top) + 385px + var(--wip, 0px))}#
     // chase camera (drag to look around; eases back behind you)
     const c = E.camera; if (IN.camDX || IN.camDY) { d.look = (d.look || 0) - IN.camDX * 0.006; IN.camDX = IN.camDY = 0; d.lookT = 1.5; } d.lookT = (d.lookT || 0) - dt; if (d.lookT <= 0) d.look = (d.look || 0) * Math.max(0, 1 - dt * 2);
     const yaw = v.ry + PI + (d.look || 0), back = truck ? 14 : 10.5, up = truck ? 7.6 : 6.0; const sx = (Math.random() - 0.5) * d.shake, sy = (Math.random() - 0.5) * d.shake;
-    const tx = v.x + Math.sin(yaw) * back, tz = v.z + Math.cos(yaw) * back; d.cx = d.cx == null ? tx : d.cx + (tx - d.cx) * Math.min(1, dt * 5); d.cz = d.cz == null ? tz : d.cz + (tz - d.cz) * Math.min(1, dt * 5); let px = d.cx, pz = d.cz, py = up; d.ocf = (d.ocf || 0) + 1; if (d.ocf % 3 === 0) { const rc = this._rc || (this._rc = new THREE.Raycaster()); rc.camera = c; const o = this._ro || (this._ro = new THREE.Vector3()), to = this._rt || (this._rt = new THREE.Vector3()); const sideX = Math.cos(yaw) * 0.9, sideZ = -Math.sin(yaw) * 0.9; let best = 1;
-      this._camSwap(() => { for (const [ox, oy, oz] of [[0, 0, 0], [sideX, 0.6, sideZ], [-sideX, 0.6, -sideZ]]) { o.set(v.x, 2.6 + oy, v.z); to.set(px + ox - v.x, py + oy - 2.6 - oy, pz + oz - v.z); const L = to.length(); to.normalize(); rc.set(o, to); rc.near = 0; rc.far = L + 0.8; const hits = rc.intersectObjects(this._cand, false); for (const h of hits) { const ob = h.object; if (!ob.isMesh || ob.isSprite || !ob.visible || (ob.material && ob.material.transparent && ob.material.opacity < 0.6) || this._inVeh(ob, v) || h.distance < (truck ? 3.0 : 2.2)) continue; best = Math.min(best, Math.max(truck ? 3.4 : 2.6, h.distance - 1.0) / L); break; } }
-        // side clearance: bushes/signs right beside the camera (not between it and the van) also count
-        let nearHit = 9; const fx = v.x + Math.sin(v.ry) * 7 - px, fz = v.z + Math.cos(v.ry) * 7 - pz, fl = Math.hypot(fx, fz) || 1; for (const ang of [-0.55, -0.28, 0.28, 0.55]) { const ca = Math.cos(ang), sa = Math.sin(ang); to.set((fx * ca + fz * sa) / fl, -0.28, (-fx * sa + fz * ca) / fl).normalize(); o.set(px, py, pz); rc.set(o, to); rc.near = 0; rc.far = 6; const hits = rc.intersectObjects(this._cand, false); for (const h of hits) { const ob = h.object; if (ob.isSprite || !ob.visible || (ob.material && ob.material.transparent && ob.material.opacity < 0.6) || this._inVeh(ob, v)) continue; if (h.point.y > 0.25) nearHit = Math.min(nearHit, h.distance); break; } }
-        d.nearH = nearHit < 5 ? 1 : 0; }, (v.x + px) / 2, (v.z + pz) / 2, (truck ? 14 : 10.5) / 2 + 3);
-      d.occ = d.nearH ? Math.min(best, 0.62) : best; } const tgtK = d.occ || 1; const k = d.occK = (d.occK == null ? tgtK : d.occK + (tgtK - d.occK) * Math.min(1, dt * (tgtK < d.occK ? 18 : 3))); px = v.x + (px - v.x) * k; pz = v.z + (pz - v.z) * k; py = 3 + (py - 3) * k + (1 - k) * 3 + (1 - k) * 2.2; c.position.set(px + sx, py + sy, pz); c.lookAt(v.x + Math.sin(v.ry) * 7, 1.2, v.z + Math.cos(v.ry) * 7); if (c.fov !== E.baseFov) { c.fov = E.baseFov; c.updateProjectionMatrix(); }
+    const tx = v.x + Math.sin(yaw) * back, tz = v.z + Math.cos(yaw) * back; d.cx = d.cx == null ? tx : d.cx + (tx - d.cx) * Math.min(1, dt * 5); d.cz = d.cz == null ? tz : d.cz + (tz - d.cz) * Math.min(1, dt * 5); let px = d.cx, pz = d.cz, py = up; d.ocf = (d.ocf || 0) + 1; if (d.ocf % 2 === 0) { const r = this.camClear(v, px, py, pz, truck); d.occ = r; } const tgtK = d.occ || 1; const k = d.occK = (d.occK == null ? tgtK : d.occK + (tgtK - d.occK) * Math.min(1, dt * (tgtK < d.occK ? 18 : 3))); px = v.x + (px - v.x) * k; pz = v.z + (pz - v.z) * k; py = 3 + (py - 3) * k + (1 - k) * 3 + (1 - k) * 2.2; c.position.set(px + sx, py + sy, pz); c.lookAt(v.x + Math.sin(v.ry) * 7, 1.2, v.z + Math.cos(v.ry) * 7); if (c.fov !== E.baseFov) { c.fov = E.baseFov; c.updateProjectionMatrix(); }
     if (d.dmg >= 100 && !d.brokeMsg) { d.brokeMsg = 1; sfx('deny'); toast(`💥 The ${truck ? 'truck' : 'van'} broke down! Tap 🐢 Torty's Tow`); }
     $('dTow').classList.toggle('hot', d.dmg >= 100); return true; }
   collide() { const d = this.d, v = d.veh, w = this.g.world, truck = d.kind === 'truck'; const R = truck ? 1.35 : 1.15, H = truck ? 2.4 : 1.8; const near = this._near || (this._near = []);
