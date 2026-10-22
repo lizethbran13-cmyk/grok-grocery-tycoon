@@ -2,16 +2,16 @@
 // hand-off, and YOU behind the wheel: the Ship Center truck for 2-day shipping and the Grok Van for same-day delivery, with a GPS
 // route, real crashes (damage, repair bill, late parcels) and Torty's Tow back to the dock so you're never stuck.
 import * as THREE from 'three';
-import { E } from './engine.js?v=ggt20';
-import { IN } from './input.js?v=ggt20';
-import { S, persist } from './save.js?v=ggt20';
-import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt20';
-import { fmtClock } from './sim.js?v=ggt20';
-import { panel, toast, talk, talking } from './uikit.js?v=ggt20';
-import { sfx } from './audio.js?v=ggt20';
-import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt20';
-import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt20';
-import { makePet, animPet } from './pets.js?v=ggt20';
+import { E } from './engine.js?v=ggt21mp';
+import { IN } from './input.js?v=ggt21mp';
+import { S, persist } from './save.js?v=ggt21mp';
+import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt21mp';
+import { fmtClock } from './sim.js?v=ggt21mp';
+import { panel, toast, talk, talking } from './uikit.js?v=ggt21mp';
+import { sfx } from './audio.js?v=ggt21mp';
+import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt21mp';
+import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt21mp';
+import { makePet, animPet } from './pets.js?v=ggt21mp';
 const PI = Math.PI, $ = (id) => document.getElementById(id), $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const nowA = () => S.day * 1440 + S.time;
 // ---------------------------------------------------------------- delivery spots (Maple Lane + the new east side)
@@ -164,7 +164,7 @@ body.drv52 #toast{top:calc(env(safe-area-inset-top) + 385px + var(--wip, 0px))}#
   deliver(t) { const on = this.on, d = this.d, q = t.ord, D = t.dest; if (q.st !== 'drive') return; sfx('ding');
     const late = q.type === 'delivery' ? Math.max(0, nowA() - (q.due || nowA()) + (q.lateAdd || 0)) : (q.lateAdd || 0); let st = on.stars(q, late); if (d.dmg > 50) st = Math.max(1, st - 1); const tip = (q.type === 'ship' ? 10 : 8) + (st >= 5 ? 4 + ((Math.random() * 5) | 0) : 0);
     const rush = d.kind === 'van' && d.tlim && d.tLeft <= 0; let refund = 0; if (rush) st = Math.max(1, Math.min(st, 4) - 1);
-    q.st = 'new'; const before = S.money; on.pay(q, rush ? 0 : tip, st, D.curb[0], D.curb[1]); if (rush) { refund = Math.max(0, S.money - before); this.charge(refund); const s1 = S.stores && S.stores.s1; if (s1 && s1.rep != null) s1.rep = Math.max(0, s1.rep - 3); d.refunds = (d.refunds || 0) + refund; } d.earned += S.money - before; d.done++;
+    this.g.app.mp && this.g.app.mp.event({ c: 'del', to: D.fam || D.n }); q.st = 'new'; const before = S.money; on.pay(q, rush ? 0 : tip, st, D.curb[0], D.curb[1]); if (rush) { refund = Math.max(0, S.money - before); this.charge(refund); const s1 = S.stores && S.stores.s1; if (s1 && s1.rep != null) s1.rep = Math.max(0, s1.rep - 3); d.refunds = (d.refunds || 0) + refund; } d.earned += S.money - before; d.done++;
     const r = on.person(q.id * 71 + 5, false, null, D.door[0] + 0.6, D.door[1]); r.reg = 'out'; r.ry = PI; r.life = 3.5; r.carry = true; r.pet = q.pet && !on.homeVisible(q.pet) ? q.pet : (D.luna && !on.homeVisible('luna') ? 'luna' : null);
     if (rush) toast(`⏰ LATE! ${D.fam} got a ${$m(refund)} refund and gave ${st}⭐. Store rating went down a bit.`); else if (D.dog) toast('🐶 WOOF WOOF! Candy runs out to say thanks!'); else if (D.luna) toast('🐭 Luna: "Squeak! Straight into the Grok Lockers. Ratita approved!"'); else if (late > 0) toast(`⏰ A bit late${q.lateAdd ? ' (that crash cost time)' : ''}, but ${D.fam} still says thanks!`); else toast(`🎉 ${D.fam}: "Wow, ${q.type === 'ship' ? '2 days early' : 'so fast'}! Thank you!"`);
     this.nextTarget(); persist(); }
