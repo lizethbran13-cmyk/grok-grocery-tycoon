@@ -23,6 +23,7 @@ import { Decor } from './decor.js?v=ggt18';
 import { MG_NAMES } from './mg.js?v=ggt18';
 import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt18';
 import { Online } from './onlinesim.js?v=ggt18';
+import { bonusTick } from './patch52.js?v=ggt18';
 import { OWN as OP_OWN } from './online.js?v=ggt18';
 const PI = Math.PI;
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _c = new THREE.Color();
@@ -155,7 +156,7 @@ export class Game {
     const G = S.goals, before = Object.keys(G).length; if (depts.size >= 6) G.dept6 = 1; if (staff >= 4 + (S.mode === 'boss' ? 0 : 0)) G.staff4 = 1; if (M.length >= 2) G.store2 = 1; if (M.length >= 3) G.store3 = 1; if (S.dc) G.dc = 1; if (S.brand.on) G.brand = 1; if (S.trucks >= 3) G.fleet = 1; if (S.stores.rival && S.stores.rival.owned) G.buyout = 1; if (new Set(M.map((k) => S.stores[k].type || 'grocery')).size >= 3) G.mix3 = 1; if (M.length >= 5 && S.dc && S.brand.on) G.tycoon = 1;
     if (Object.keys(G).length > before) { const g = GOALS.filter(([k]) => G[k]).pop(); sfx('win'); toast('🏆 Empire goal: ' + (g ? g[1] : '')); if (G.tycoon && !S.badges.tycoon) { S.badges.tycoon = 1; this.app.ui.banner('👑 RETAIL TYCOON!', 'Five stores, a DC and your own brand. Shopsville bows to your carts.'); } persist(); } }
   // ---------------- interactions ----------------
-  gather() { const me = this.me, out = [], sid = this.curStore(), st = sid && S.stores[sid], G = sid && GEOM[sid]; const push = (x, z, r, label, f) => { const d = Math.hypot(me.x - x, me.z - z); if (d < r) out.push({ d, label, f }); };
+  gather() { if (this.online && this.online.p52 && this.online.p52.d) return this.online.p52.act(); const me = this.me, out = [], sid = this.curStore(), st = sid && S.stores[sid], G = sid && GEOM[sid]; const push = (x, z, r, label, f) => { const d = Math.hypot(me.x - x, me.z - z); if (d < r) out.push({ d, label, f }); };
     for (const p of this.npcs) if (p.talk && p.root.visible) push(p.x, p.z, 2.3, p.label, p.talk); else if (p.talk && p._rv && p.id !== 'pirat' && this.petAway(p.id)) push(p.x, p.z, 2.3, p.label.replace('Talk to', 'Leave a note for').replace('Pet ', 'Leave a note for ') + ' (away)', p.talk);
     for (const a of this.people) { if (a.opt.ok && !a.opt.ok()) continue; if (a.region !== 'out' && !(this.world.regionMeshes[a.region] || [{ visible: true }])[0].visible) continue; push(a.x, a.z, 2.2, a.label, a.talk); }
     if (sid && STORE[sid].rival && !mine(sid)) { st.layout.forEach((f, i) => { if (!f || !FIX[f].dept) return; const sl = G.slots[i]; push(sl.x + (me.x > sl.x ? 1.6 : -1.6), me.z > sl.z - 2.5 && me.z < sl.z + 2.5 ? me.z : sl.z, 1.4, `🏷️ Check ${DEPTS[FIX[f].dept].n} prices`, () => this.spyDept(sid, FIX[f].dept)); }); push(G.doorX + 4.5, G.front - 1.5, 2.2, '📰 Read their deals flyer', () => this.app.ui.spy(sid)); }
@@ -205,12 +206,15 @@ export class Game {
   // ---------------- per-frame ----------------
   update(dt) { this.T += dt; const app = this.app, me = this.me;
     const busy = app.busy || talking(); const mv = busy ? { x: 0, y: 0 } : readMove(); const j = !busy && edge('jump');
+    let inside = false; const P52 = this.online && this.online.p52; bonusTick(app);
+    if (P52 && P52.d) { P52.tick(dt, mv); this.setVis(); inside = false; } else {
     if (edge('view')) this.toggleFP();
     if (this.fp) { if (IN.camDX || IN.camDY) { this.cam.yaw -= IN.camDX * 0.0065; this.fpPitch = Math.max(-1.1, Math.min(1.1, this.fpPitch - IN.camDY * 0.0045)); IN.camDX = IN.camDY = 0; } }
     me.update(dt, { mx: mv.x, my: mv.y, jump: j }, this.world, this.cam.moveYaw); if (this.fp) me.yaw = this.cam.moveYaw;
-    this.setVis(); const inside = !!this.inB;
+    this.setVis(); inside = !!this.inB;
     if (this.fp) { const c = E.camera, yw = this.cam.moveYaw, cp = Math.cos(this.fpPitch); c.position.set(me.x + Math.sin(yw) * 0.12, me.y + 1.62, me.z + Math.cos(yw) * 0.12); c.lookAt(c.position.x + Math.sin(yw) * cp, c.position.y + Math.sin(this.fpPitch), c.position.z + Math.cos(yw) * cp); if (c.fov !== 72) { c.fov = 72; c.updateProjectionMatrix(); } }
     else { this.cam.update(dt, me, inside ? null : this.world, inside ? { dist: 7.4 } : {}); if (inside) { this.cam.pitch = Math.max(this.cam.pitch, 0.62); const b = this.inB, c = E.camera.position, m = 0.7; const tx = me.x, ty = me.y + 1.4, tz = me.z; let k = 1; const lim = (v, t, lo, hi) => { if (v > hi && v !== t) k = Math.min(k, (hi - t) / (v - t)); if (v < lo && v !== t) k = Math.min(k, (lo - t) / (v - t)); }; lim(c.x, tx, b.x0 + m, b.x1 - m); lim(c.z, tz, b.z0 + m, b.z1 - m); if (k < 1) { k = Math.max(0.15, k); c.set(tx + (c.x - tx) * k, ty + (c.y - ty) * Math.max(k, 0.6), tz + (c.z - tz) * k); E.camera.lookAt(tx, me.y + 1.0, tz); } } else if (this.cam.pitch > 0.75) this.cam.pitch -= dt * 0.5; }
+    }
     this.fades(); updateFrustum(E.camera); { if (this.sunBase == null) { this.sunBase = E.sun.intensity; this.hemiBase = E.hemi.intensity; } const ind = inside && !this.fp ? 1 : 0; this.indK = (this.indK || 0) + (ind - (this.indK || 0)) * Math.min(1, dt * 5); E.sun.intensity = this.sunBase * (1 - 0.62 * this.indK); E.hemi.intensity = this.hemiBase * (1 + 0.5 * this.indK); }
     // simulation + events
     this.sim.step(dt, this); this.events();

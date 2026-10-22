@@ -4,6 +4,7 @@
 // Locked unless the arcade sold you grokDLC.grocery.super_shop_online_pass (Time Jumper builds are unlocked for testing).
 import * as THREE from 'three';
 import * as K from './kit.js?v=ggt18';
+import { buildEast, eastTreeOk } from './east52.js?v=ggt18';
 import { rbox } from './world.js?v=ggt18';
 import { shell, part, onSide } from './bld.js?v=ggt18';
 import { PI, pick, rcyl, sph, cyl, cone, torus, capsule, txt, poster, wallWord, clockW, pendant, rack, pallet, planter, trash, bags, produceCrate, grokLogo, cartStatic, star, heart } from './art.js?v=ggt18';
@@ -25,10 +26,10 @@ export const HOUSES = [
   { x: 75, n: '6 Maple Ln', fam: 'The Lees', wall: 0xe9d5ff, roof: 0x4c1d95, door: 0xb91c1c },
 ];
 const HZ = 119; // house fronts (road z=110, sidewalk to 117.2)
-export function treeOk(x, z) { return !OWN || !(x > 81 && x < 106 && z > -48 && z < 8) && !(z > 112 && z < 132 && Math.abs(x) < 92 && HOUSES.some((h) => Math.abs(h.x - x) < 9.5)); }
+export function treeOk(x, z) { return !OWN || eastTreeOk(x, z) && !(x > 81 && x < 106 && z > -48 && z < 8) && !(z > 112 && z < 132 && Math.abs(x) < 92 && HOUSES.some((h) => Math.abs(h.x - x) < 9.5)); }
 // ---------------------------------------------------------------- world build (only when owned)
 export function buildOnline(w, SPOTS) { if (!OWN) return; const L = w.lights;
-  buildDesk(w, L); buildCurb(w); buildShipCenter(w, L); HOUSES.forEach((h) => house(w, h)); mapleLane(w); w.region = 'out'; }
+  buildDesk(w, L); buildCurb(w); buildShipCenter(w, L); HOUSES.forEach((h) => house(w, h)); mapleLane(w); buildEast(w, L); w.region = 'out'; }
 function buildDesk(w, L) { const { x, z } = DESK; w.region = 'in_s1';
   // counter facing the shop floor (west), in the front-right corner (the Customer Service corner moves here)
   { const T = w.tf(x, 0, z, -PI / 2); T.slab('m', 0x0f766e, 0, 0, 0, 2.7, 1.0, 0.8, 0.06); T.box('g', 0xf8fafc, 0, 1.0, 0, 2.85, 0.07, 0.95, 0.03); T.box('g', 0x14b8a6, 0, 0.12, 0.41, 2.6, 0.7, 0.02, 0.01);
