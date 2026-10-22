@@ -2,16 +2,16 @@
 // hand-off, and YOU behind the wheel: the Ship Center truck for 2-day shipping and the Grok Van for same-day delivery, with a GPS
 // route, real crashes (damage, repair bill, late parcels) and Torty's Tow back to the dock so you're never stuck.
 import * as THREE from 'three';
-import { E } from './engine.js?v=ggt18';
-import { IN } from './input.js?v=ggt18';
-import { S, persist } from './save.js?v=ggt18';
-import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt18';
-import { fmtClock } from './sim.js?v=ggt18';
-import { panel, toast, talk, talking } from './uikit.js?v=ggt18';
-import { sfx } from './audio.js?v=ggt18';
-import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt18';
-import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt18';
-import { makePet, animPet } from './pets.js?v=ggt18';
+import { E } from './engine.js?v=ggt19';
+import { IN } from './input.js?v=ggt19';
+import { S, persist } from './save.js?v=ggt19';
+import { DEPTS, DEPT_IDS, FIX } from './data.js?v=ggt19';
+import { fmtClock } from './sim.js?v=ggt19';
+import { panel, toast, talk, talking } from './uikit.js?v=ggt19';
+import { sfx } from './audio.js?v=ggt19';
+import { HOUSES, VAN_HOME, WH } from './online.js?v=ggt19';
+import { CEDAR, APTS, ROADS52 } from './east52.js?v=ggt19';
+import { makePet, animPet } from './pets.js?v=ggt19';
 const PI = Math.PI, $ = (id) => document.getElementById(id), $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const nowA = () => S.day * 1440 + S.time;
 // ---------------------------------------------------------------- delivery spots (Maple Lane + the new east side)
