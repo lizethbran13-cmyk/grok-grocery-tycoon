@@ -1,30 +1,30 @@
 // Grok Grocery Tycoon - world, characters, store simulation hookup, jobs, interactions, first-person mode and smart rendering.
 import * as THREE from 'three';
-import { E, setEnvironment, followShadow } from './engine.js?v=ggt20';
-import { World } from './world.js?v=ggt20';
-import { buildMap, SPOTS, GEOM, ENV } from './map.js?v=ggt20';
-import { BUILDINGS, buildingAt } from './bld.js?v=ggt20';
-import { Walker } from './walker.js?v=ggt20';
-import { FollowCam } from './cam.js?v=ggt20';
-import { makePet, animPet } from './pets.js?v=ggt20';
-import { readMove, edge, IN } from './input.js?v=ggt20';
-import { updateFrustum, inView, LightPool } from './perf.js?v=ggt20';
-import { S, persist, capOf, news, newStore, staffName } from './save.js?v=ggt20';
-import { sfx } from './audio.js?v=ggt20';
-import { talk, talking, toast } from './uikit.js?v=ggt20';
-import { MATS } from './mats.js?v=ggt20';
-import { Builder, P } from './geo.js?v=ggt20';
-import { compact } from './compact.js?v=ggt20';
-import { Fixtures, FIXSOLID } from './fixtures.js?v=ggt20';
-import { Crowd } from './crowd.js?v=ggt20';
-import { Sim, EV, mine, shelfFrac, storeIds, OPEN, CLOSE, fmtClock } from './sim.js?v=ggt20';
-import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, GOALS, EMPIRE, TYPES, typeOf, DEPT_ITEMS, autoLayout } from './data.js?v=ggt20';
-import { Decor } from './decor.js?v=ggt20';
-import { MG_NAMES } from './mg.js?v=ggt20';
-import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt20';
-import { Online } from './onlinesim.js?v=ggt20';
-import { bonusTick } from './patch52.js?v=ggt20';
-import { OWN as OP_OWN } from './online.js?v=ggt20';
+import { E, setEnvironment, followShadow } from './engine.js?v=ggt21mp';
+import { World } from './world.js?v=ggt21mp';
+import { buildMap, SPOTS, GEOM, ENV } from './map.js?v=ggt21mp';
+import { BUILDINGS, buildingAt } from './bld.js?v=ggt21mp';
+import { Walker } from './walker.js?v=ggt21mp';
+import { FollowCam } from './cam.js?v=ggt21mp';
+import { makePet, animPet } from './pets.js?v=ggt21mp';
+import { readMove, edge, IN } from './input.js?v=ggt21mp';
+import { updateFrustum, inView, LightPool } from './perf.js?v=ggt21mp';
+import { S, persist, capOf, news, newStore, staffName } from './save.js?v=ggt21mp';
+import { sfx } from './audio.js?v=ggt21mp';
+import { talk, talking, toast } from './uikit.js?v=ggt21mp';
+import { MATS } from './mats.js?v=ggt21mp';
+import { Builder, P } from './geo.js?v=ggt21mp';
+import { compact } from './compact.js?v=ggt21mp';
+import { Fixtures, FIXSOLID } from './fixtures.js?v=ggt21mp';
+import { Crowd } from './crowd.js?v=ggt21mp';
+import { Sim, EV, mine, shelfFrac, storeIds, OPEN, CLOSE, fmtClock } from './sim.js?v=ggt21mp';
+import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, GOALS, EMPIRE, TYPES, typeOf, DEPT_ITEMS, autoLayout } from './data.js?v=ggt21mp';
+import { Decor } from './decor.js?v=ggt21mp';
+import { MG_NAMES } from './mg.js?v=ggt21mp';
+import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt21mp';
+import { Online } from './onlinesim.js?v=ggt21mp';
+import { bonusTick } from './patch52.js?v=ggt21mp';
+import { OWN as OP_OWN } from './online.js?v=ggt21mp';
 const PI = Math.PI;
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _c = new THREE.Color();
 function meshFrom(parts) { const g = new THREE.Group(); for (const k in parts) { const b = parts[k]; if (!b.parts.length) continue; const m = new THREE.Mesh(compact(b.build(), k), MATS[k]); m.castShadow = k !== 'l' && k !== 'e'; m.receiveShadow = true; g.add(m); } return g; }
@@ -127,13 +127,17 @@ export class Game {
   curStore() { const b = this.inB; return b && STORE[b.id] ? b.id : null; }
   canWork(sid) { return sid && (mine(sid)); }
   // ---------------- jobs + rewards ----------------
-  reward(kind, frac, extra = '') { frac = Math.max(0, Math.min(1, frac)); const career = S.mode === 'career'; const base = { bag: 6, carts: 2, clean: 6, help: 5, stock: 7, scan: 8, special: 10 }[kind] || 4; const xp = Math.round(base * (0.4 + frac));
+  reward(kind, frac, extra = '') { frac = Math.max(0, Math.min(1, frac)); if (!this._teamRw) this.app.mp && this.app.mp.event({ c: 'job', kind, frac: +frac.toFixed(2) }); const career = S.mode === 'career'; const base = { bag: 6, carts: 2, clean: 6, help: 5, stock: 7, scan: 8, special: 10 }[kind] || 4; const xp = Math.round(base * (0.4 + frac));
     if (career) { S.xp += xp; S.worked = 1; const tip = Math.round(frac * base * 0.6); S.money += tip; const t = S.daily.t; if (t && t[kind] !== undefined && t[kind] >= 0) { t[kind]++; const need = TASKS[kind][2]; if (t[kind] >= need) { t[kind] = -1; S.xp += 15; S.money += 20; toast(`✅ Daily task done: ${TASKS[kind][1]}! +15 XP, +$20`); sfx('win'); } } toast(`+${xp} XP${tip ? ' · +$' + tip + ' tips' : ''}${extra}`); this.checkPromo(); }
     else { const st = S.stores[this.curStore()] || S.stores.s1; st.rep = Math.min(100, st.rep + frac * 0.8); if (extra) toast(extra.trim()); }
     S.stats[{ bag: 'bags', carts: 'carts', clean: 'cleans', help: 'helps', stock: 'stocks' }[kind] || 'x'] = (S.stats[{ bag: 'bags', carts: 'carts', clean: 'cleans', help: 'helps', stock: 'stocks' }[kind] || 'x'] || 0) + 1; persist(); }
   checkPromo() { const nx = RANKS[S.rank + 1]; if (S.mode !== 'career' || !nx || S.rank >= 4 && true && S.rank + 1 === 5) return; if (S.xp >= nx.xp) { S.rank++; persist(); sfx('win'); this.app.ui.banner(`${nx.e} PROMOTED: ${nx.n.toUpperCase()}!`, nx.can); news(`${S.name || 'Our clerk'} promoted to ${nx.n}!`); } }
   mg(id, opt, done) { this.app.paused = true; this.app.busy = true; this.app.ui.minigame(id, (sc) => { this.app.resume(); done && done(sc); }, opt); }
   grabCase(sid) { const st = S.stores[sid]; let best = null, bf = 9; for (const k of DEPT_IDS) { const c = capOf(st, k); if (!c || st.back[k] <= 0) continue; const f = st.shelf[k] / c; if (f < bf) { bf = f; best = k; } } if (!best) { toast('📭 No backstock! ' + (S.mode === 'boss' || S.rank >= 2 ? 'Order more at the Manager\'s Desk.' : 'Penny has ordered more.')); return; } if (bf > 0.95) { toast('👍 Every shelf is already full!'); return; } this.carry = { sid, dept: best }; this.caseM.visible = true; sfx('pop'); toast(`📦 Got a case of ${DEPTS[best].n}. Find a ${DEPTS[best].n} shelf!`); }
+  // co-op: a friend finished a job or a delivery, so the whole crew gets a team tip
+  teamTip(e, who) { const JOB = { bag: '🛍️ bagged groceries', carts: '🛒 brought in carts', clean: '🧽 cleaned up', help: '🙋 helped a shopper', stock: '📦 stocked a shelf', scan: '🧾 ran a register', special: '⭐ did a special job' };
+    const tip = e.c === 'del' ? 6 : Math.max(1, Math.round(({ bag: 6, carts: 2, clean: 6, help: 5, stock: 7, scan: 8, special: 10 }[e.kind] || 4) * 0.5 * (0.4 + Math.max(0, Math.min(1, +e.frac || 0)))));
+    S.money += tip; S.stats.teamTips = (S.stats.teamTips || 0) + tip; sfx('ding'); toast(e.c === 'del' ? `🤝 ${who} delivered to ${String(e.to || 'a house').slice(0, 30)}! Team tip +$${tip}` : `🤝 ${who} ${JOB[e.kind] || 'finished a job'}! Team tip +$${tip}`); persist(); }
   stockShelf(sid, dept, slot) { const st = S.stores[sid]; this.mg('stock', { dept }, (sc) => { const ss = this.slotStock(st); const f = st.layout[slot]; const room = f && FIX[f].dept === dept ? FIX[f].cap - ss[slot] : 0; const n = Math.max(0, Math.min(st.back[dept], capOf(st, dept) - st.shelf[dept], Math.max(Math.round(6 + sc * 18), room))); st.back[dept] -= n; st.shelf[dept] += n; if (room > 0) ss[slot] += Math.min(n, room); this.carry = null; this.caseM.visible = false; this.reward('stock', sc, ` · +${n} on the shelf`); this.refreshStores(); }); }
   help(a) { const st = S.stores[a.sid] || S.stores.s1; const have = [...new Set(st.layout.filter((f) => f && FIX[f].dept).map((f) => FIX[f].dept))]; const pool = have.length >= 2 ? have : DEPT_IDS; const ans = pool[(a.seed >> 3) % pool.length], items = DEPT_ITEMS[ans], item = items[(a.seed >> 5) % items.length];
     const opts = [ans]; let g = 0; while (opts.length < 3 && g++ < 50) { const src = have.length >= 3 ? have : DEPT_IDS; const d = src[(Math.random() * src.length) | 0]; if (!opts.includes(d)) opts.push(d); } opts.sort(() => Math.random() - 0.5); const q = [`Excuse me! Where would I find ${item}?`, ans];

@@ -1,15 +1,15 @@
 // Grok Grocery Tycoon - menus: title (Career / Boss + store type), look editor, how to play, journal, banners,
 // the Manager's Desk (floor planner, prices, orders, staff, empire map, news), hiring, bank, brand lab, rival spy, time clock, day summary.
-import { $, esc } from './util.js?v=ggt20';
-import { S, persist, resetSave, newGame, capOf, news, staffName } from './save.js?v=ggt20';
-import { sfx, setSound } from './audio.js?v=ggt20';
-import { panel, closePanel, on, toast } from './uikit.js?v=ggt20';
-import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=ggt20';
-import { goal, TASKS } from './story.js?v=ggt20';
-import { GAMES, MG_NAMES } from './mg.js?v=ggt20';
-import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, EMPIRE, GOALS, BRAND_LINES, TYPES, TYPE_IDS, typeOf } from './data.js?v=ggt20';
-import { GEOM } from './map.js?v=ggt20';
-import { storeIds, mine, shelfFrac, wholesale, fmtClock } from './sim.js?v=ggt20';
+import { $, esc } from './util.js?v=ggt21mp';
+import { S, persist, resetSave, newGame, capOf, news, staffName } from './save.js?v=ggt21mp';
+import { sfx, setSound } from './audio.js?v=ggt21mp';
+import { panel, closePanel, on, toast } from './uikit.js?v=ggt21mp';
+import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=ggt21mp';
+import { goal, TASKS } from './story.js?v=ggt21mp';
+import { GAMES, MG_NAMES } from './mg.js?v=ggt21mp';
+import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, EMPIRE, GOALS, BRAND_LINES, TYPES, TYPE_IDS, typeOf } from './data.js?v=ggt21mp';
+import { GEOM } from './map.js?v=ggt21mp';
+import { storeIds, mine, shelfFrac, wholesale, fmtClock } from './sim.js?v=ggt21mp';
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const pct = (p) => Math.round(p * 100) + '%';
@@ -24,11 +24,11 @@ export class UI {
       <p class="tag">Start as a courtesy clerk and work your way to owner, or start as the boss. Run supermarkets, supercenters, shoe shops, toy stores, pet shops and more across the town of Shopsville.</p>
       <div class="tBtns">${has ? `<button class="go" id="tCont">▶ CONTINUE · DAY ${S.day} · ${S.mode === 'career' ? esc(RANKS[S.rank].n) : 'BOSS'}</button>` : ''}
       <div class="btnRow"><button class="${has ? 'mbtn2' : 'go'}" id="tCar">🛒 CAREER<small>clerk to owner</small></button><button class="${has ? 'mbtn2' : 'go'}" id="tBoss">👑 BOSS<small>run it all</small></button></div>
-      <div class="btnRow"><button class="mbtn2 sm" id="tLook">👤 YOUR LOOK</button><button class="mbtn2 sm" id="tOpts">⚙️ OPTIONS</button></div></div>
+      <div class="btnRow"><button class="mbtn2 sm" id="tLook">👤 YOUR LOOK</button><button class="mbtn2 sm" id="tOpts">⚙️ OPTIONS</button></div>${has ? '<div class="btnRow"><button class="mbtn2 sm" id="tMP">🌐 PLAY WITH FRIENDS<small>co-op shift</small></button></div>' : ''}</div>
       <p class="tiny">A Grok game · Luna, Pi-rat, Snowie, Candy and Torty work here too</p></div>`;
     const start = (mode) => { const go = () => this.pickType((t) => { newGame(mode, t); const run = () => app.play(true); if (!S.made) this.custom(run, true); else run(); }, { big: true, career: mode === 'career', title: mode === 'career' ? '🛒 Where do you want to work?' : '👑 What will your first store be?' });
       if (has) { panel(`<h2>Start over?</h2><p class="sub">Your current game (day ${S.day}) will be replaced.</p><div class="btnRow"><button class="mbtn2" id="nN">Keep it</button><button class="go" id="nY">New game</button></div>`, (c) => { on(c, '#nN', () => this.title()); on(c, '#nY', go); }); } else go(); };
-    on(ui, '#tCont', () => app.play(false)); on(ui, '#tCar', () => start('career')); on(ui, '#tBoss', () => start('boss')); on(ui, '#tLook', () => this.custom(() => this.title())); on(ui, '#tOpts', () => this.options(() => this.title())); }
+    on(ui, '#tCont', () => app.play(false)); on(ui, '#tCar', () => start('career')); on(ui, '#tBoss', () => start('boss')); on(ui, '#tLook', () => this.custom(() => this.title())); on(ui, '#tOpts', () => this.options(() => this.title())); on(ui, '#tMP', () => app.mp.lobby(() => this.title())); }
   pickType(cb, o = {}) { const card = (k) => { const T = TYPES[k], lock = T.big && !o.big; return `<button class="tcard ${lock ? 'off' : ''}" data-t="${k}" ${lock ? 'disabled' : ''}><span class="te">${T.e}</span><b>${esc(T.n)}</b><small>${esc(T.blurb)}</small>${lock ? '<i>needs a big lot</i>' : ''}</button>`; };
     panel(`<h2>${esc(o.title || 'Pick a store type')}</h2>${o.price ? `<p class="sub">Lot price ${$m(o.price)}</p>` : ''}${o.career ? '<p class="sub">You start as a courtesy clerk. Every store type has its own floor, products and jobs.</p>' : ''}<div class="tgrid">${TYPE_IDS.map(card).join('')}</div><button class="mbtn2" id="pX">BACK</button>`, (c) => {
       c.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { sfx('click'); closePanel(); cb(b.dataset.t); }); on(c, '#pX', () => { if (this.app.state === 'play') this.done(); else this.title(); }); }, 'wideP'); }
@@ -53,8 +53,8 @@ export class UI {
       <div class="statGrid"><div><b>${$m(S.money)}</b><small>💵 money</small></div><div><b>${career ? esc(RANKS[S.rank].e + ' ' + RANKS[S.rank].n) : M.length}</b><small>${career ? (nx ? S.xp + '/' + nx.xp + ' XP' : 'top rank') : '🏪 stores'}</small></div><div><b>${S.stats.served}</b><small>🛒 shoppers served</small></div><div><b>${S.stats.aGrades}</b><small>📋 grade-A inspections</small></div></div>
       ${career ? `<h3>TODAY'S TASKS</h3>${Object.keys(t).map((k) => `<div class="upRow"><span class="ic">${TASKS[k][0]}</span><div><b>${TASKS[k][1]}</b><br><small>${t[k] < 0 ? '✅ done' : t[k] + '/' + TASKS[k][2]}</small></div></div>`).join('')}` : `<h3>YOUR STORES</h3>${M.map((k) => { const st = S.stores[k]; return `<div class="upRow"><span class="ic">${typeOf(st).e}</span><div><b>${esc(this.g.storeTitle(k))}</b><br><small>⭐ ${Math.round(st.rep)} rep · ${$m(st.rev)} today · ${st.cust} shoppers${st.grade ? ' · grade ' + st.grade : ''}</small></div></div>`; }).join('')}`}
       <h3>BEST SCORES</h3><p class="sub">${Object.keys(MG_NAMES).filter((k) => S.played[k]).map((k) => `<span class="badge on">${MG_NAMES[k][0]} ${S.best[k] || 0}</span>`).join(' ') || 'Play store jobs to set scores!'}</p>
-      <div class="btnRow"><button class="go" id="pR">▶ RESUME</button></div><div class="btnRow"><button class="mbtn2 sm" id="pD">${career && S.rank < 2 ? '⏰ Tasks' : '💼 Desk'}</button><button class="mbtn2 sm" id="pL">👤 Look</button><button class="mbtn2 sm" id="pO">⚙️</button><button class="mbtn2 sm" id="pT">🏠 Title</button></div>`, (c) => {
-      on(c, '#pR', () => app.resume()); on(c, '#pD', () => career && S.rank < 2 ? this.clock() : this.desk()); on(c, '#pL', () => this.custom(() => this.pause())); on(c, '#pO', () => this.options(() => this.pause())); on(c, '#pT', () => { persist(); app.toTitle(); }); }); }
+      <div class="btnRow"><button class="go" id="pR">▶ RESUME</button></div><div class="btnRow"><button class="mbtn2 sm" id="pD">${career && S.rank < 2 ? '⏰ Tasks' : '💼 Desk'}</button><button class="mbtn2 sm" id="pMP">🌐${app.mp.online ? ' ' + app.mp.room.code : ' Friends'}</button><button class="mbtn2 sm" id="pL">👤 Look</button><button class="mbtn2 sm" id="pO">⚙️</button><button class="mbtn2 sm" id="pT">🏠 Title</button></div>`, (c) => {
+      on(c, '#pR', () => app.resume()); on(c, '#pMP', () => app.mp.lobby(() => this.pause())); on(c, '#pD', () => career && S.rank < 2 ? this.clock() : this.desk()); on(c, '#pL', () => this.custom(() => this.pause())); on(c, '#pO', () => this.options(() => this.pause())); on(c, '#pT', () => { persist(); app.toTitle(); }); }); }
   banner(t, s) { let b = $('banner'); if (!b) { b = document.createElement('div'); b.id = 'banner'; document.body.appendChild(b); } b.innerHTML = `<b>${esc(t)}</b>${s ? `<small>${esc(s)}</small>` : ''}`; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); clearTimeout(this._bt); this._bt = setTimeout(() => b.classList.remove('on'), 3600); }
   minigame(id, done, opt) { GAMES[id](done, opt); }
   // ---------------- manager's desk ----------------
