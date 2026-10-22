@@ -20,6 +20,7 @@ import { Crowd } from './crowd.js?v=ggt21mp';
 import { Sim, EV, mine, shelfFrac, storeIds, OPEN, CLOSE, fmtClock } from './sim.js?v=ggt21mp';
 import { STORE, STORES, FIX, DEPTS, DEPT_IDS, RANKS, ROLES, CAMEOS, GOALS, EMPIRE, TYPES, typeOf, DEPT_ITEMS, autoLayout } from './data.js?v=ggt21mp';
 import { Decor } from './decor.js?v=ggt21mp';
+import { OWN as HOL_OWN, dressPlayer, uniformCol } from './holiday.js?v=ggt21mp';
 import { MG_NAMES } from './mg.js?v=ggt21mp';
 import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt21mp';
 import { Online } from './onlinesim.js?v=ggt21mp';
@@ -40,9 +41,9 @@ export class Game {
     this.fixtures = new Fixtures(); this.fixtures.upload = this.upload; this.slotSol = {}; this.fxSig = {};
     for (const d of STORES) { const G = GEOM[d.id]; this.fixtures.attach(this.scene, d.id, G.slots); this.slotSol[d.id] = G.slots.map((sl) => { const o = {}; const mk = (k) => FIXSOLID[k].map(([a, b, c, e, h]) => w.solid(sl.x + a, 0, sl.z + b, sl.x + c, h, sl.z + e, { dyn: true, off: true }));
       if (sl.kind === 'floor') { o.floor = mk('floor'); o.promo = mk('promo'); } else { o.register = mk('register'); o.selfck = mk('selfck'); } return o; }); }
-    this.dcSol = w.dyn.filter((s) => s.tag === 'dc'); this.decor = new Decor(this.scene, w, GEOM); this.decor.upload = this.upload;
-    this.crowd = new Crowd(this.scene, OP_OWN ? 96 : 72); this.sim = new Sim();
-    this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.place([0, 0.1, 2], PI);
+    this.dcSol = w.dyn.filter((s) => s.tag === 'dc'); this.decor = new Decor(this.scene, w, GEOM); this.decor.upload = this.upload; this.decor.theme = HOL_OWN ? (S.holiday || 'harvest') : null;
+    this.crowd = new Crowd(this.scene, OP_OWN ? 96 : 72, HOL_OWN); this.crowd.uniCol = uniformCol(S.uniform); this.sim = new Sim();
+    this.me = new Walker(S.look); if (HOL_OWN && S.mode === 'career') dressPlayer(this.me.rig, S.uniform || 'classic'); this.me.addTo(this.scene); this.me.place([0, 0.1, 2], PI);
     this.cam = new FollowCam(); this.cam.yaw = 0; this.cam.snap = true;
     this.inB = null; this.acts = []; this.act = null; this.npcs = []; this.people = []; this.staffAg = {}; this.cameoPets = {};
     this.buildPets(); this.buildPeople(); this.buildTrucks(); this.buildSpills(); this.buildBubbles(); this.buildCarry();
@@ -96,13 +97,17 @@ export class Game {
       while (diff !== 0 && g++ < 4000) { let b = -1, bf = diff > 0 ? 9 : -1; for (const i of idx) { const c = FIX[L[i]].cap, fr = st.ss[i] / c; if (diff > 0 ? st.ss[i] < c && fr < bf : st.ss[i] > 0 && fr > bf) { bf = fr; b = i; } } if (b < 0) break; st.ss[b] += diff > 0 ? 1 : -1; diff += diff > 0 ? -1 : 1; } }
     return st.ss; }
   variantOf(st) { const ss = this.slotStock(st); return (f, i) => { if (i === undefined) { const fr = shelfFrac(st, FIX[f].dept); return fr >= 0.5 ? 0 : fr > 0 ? 1 : 2; } const n = ss[i] || 0, fr = n / FIX[f].cap; return fr >= 0.5 ? 0 : n > 0 ? 1 : 2; }; }
-  refreshStores(force) { for (const d of STORES) { const st = S.stores[d.id]; const show = st && (st.owned || d.id === 's1' || d.rival); const layout = show ? st.layout : [];
+  refreshStores(force) { this.giftThanks(); for (const d of STORES) { const st = S.stores[d.id]; const show = st && (st.owned || d.id === 's1' || d.rival); const layout = show ? st.layout : [];
       const stype = (st && st.type) || d.type || 'grocery', vo = show ? this.variantOf(st) : null, sig = stype + '|' + layout.map((f, i) => f ? f + (FIX[f].dept && vo ? vo(f, i) : '') : '').join(','); if (force || sig !== this.fxSig[d.id]) { this.fxSig[d.id] = sig; this.fixtures.sync(d.id, layout, vo || (() => 0), stype);
         this.slotSol[d.id].forEach((o, i) => { const f = layout[i] || ''; for (const k in o) o[k].forEach((s) => { s.off = !(k === 'floor' ? f && FIX[f].kind === 'floor' : k === 'promo' ? !!show && !f : f === k); }); }); } }
     this.refreshDecor(); for (const s of this.dcSol) s.off = !S.dc; const RM = this.world.regionMeshes; const set = (k, v) => (RM[k] || []).forEach((m) => m.visible = v);
     for (const id of ['s2', 's3']) { const own = S.stores[id] && S.stores[id].owned; set('own_' + id, own); set('sale_' + id, !own); } set('own_dc', S.dc); set('sale_dc', !S.dc);
     this.snowie.x = S.dc ? SPOTS.dcBoard[0] + 3 : SPOTS.farmStand[0] + 3; this.snowie.z = S.dc ? SPOTS.dcBoard[1] - 3 : SPOTS.farmStand[1] + 1; this.snowie.region = S.dc ? 'in_dc' : 'in_farm';
     this.rebuildStaff(); this.checkGoals(); }
+  // DLC #58 Mini Pack: holiday theme + uniforms (Journal -> Holiday). Main St gets a free Thanksgiving Aisle the first time.
+  setHoliday(t) { S.holiday = t; this.decor.theme = t; this.refreshDecor(); persist(); }
+  setUniform(id) { S.uniform = id; this.crowd.uniCol = uniformCol(id); this.refreshMe(); persist(); }
+  giftThanks() { if (!HOL_OWN || S.flags58) return; const st = S.stores && S.stores.s1; if (!st || !st.layout) return; const i = st.layout.lastIndexOf('aisle'); if (i >= 0) { st.layout[i] = 'thanks'; S.flags58 = 1; persist(); return true; } }
   refreshDecor() { for (const d of STORES) { const st = S.stores[d.id]; if (d.rival && !(st && st.owned)) this.decor.set(d.id, d.type, d.brandName, true);
       else if (d.id === 's1' || (st && st.owned)) { const t = (st && st.type) || 'grocery'; this.decor.set(d.id, t, TYPES[t].brand, false); } else this.decor.drop(d.id); } this._decorVis = null; }
   storeTitle(sid) { const d = STORE[sid], st = S.stores[sid]; if (!d) return ''; if (d.rival && !(st && st.owned)) return d.name; if (sid === 's1' || (st && st.owned)) return 'Grok ' + typeOf(st).n + ' · ' + d.short; return d.short + ' (lot for sale)'; }
@@ -286,7 +291,7 @@ export class Game {
     this.sim.seedCarts(); persist(); this.refreshStores(true); }
   onInspected(g) { if (S.mode === 'career' && g === 'A') { S.xp += 20; toast('+20 XP for a spotless store!'); this.checkPromo(); } }
   render(dt) { followShadow(this.me.x, this.me.y, this.me.z); }
-  refreshMe() { const p = [this.me.x, this.me.y, this.me.z], y = this.me.yaw; this.me.removeFrom(this.scene); this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.place(p, y); this.me.setVisible(!this.fp); this.attachCarry(); }
+  refreshMe() { const p = [this.me.x, this.me.y, this.me.z], y = this.me.yaw; this.me.removeFrom(this.scene); this.me = new Walker(S.look); if (HOL_OWN && S.mode === 'career') dressPlayer(this.me.rig, S.uniform || 'classic'); this.me.addTo(this.scene); this.me.place(p, y); this.me.setVisible(!this.fp); this.attachCarry(); }
   ensureStores() { for (const d of STORES) if (d.rival && !S.stores[d.id]) { const st = S.stores[d.id] = newStore(d.id, d.id === 'rival' ? 'rival' : d.id === 'rival2' ? 'rival2' : 1, d.type, d.id === 'mega' ? 6 : 2); st.staff = [{ role: 'cashier', name: d.short + ' Cashier', skill: 2 }, { role: 'stocker', name: d.short + ' Stocker', skill: 2 }, { role: 'manager', name: d.boss || 'Max Markdown', skill: 3 }]; } }
   startMode() { this.ensureStores(); const G = GEOM.s1; this.me.place([G.doorX, 0.1, G.front + 6], PI); this.cam.yaw = 0; this.cam.snap = true; this.sim = new Sim(); this.carry = null; this.cartsHeld = 0; this.caseM.visible = false; if (this.online) this.online.reset(); if (S.mode === 'career' && (!S.daily || S.daily.day !== S.day)) S.daily = { day: S.day, t: dailyFor(S.rank, S.day, !typeOf(S.stores.s1).carts) }; this.refreshStores(true); }
 }

@@ -8,6 +8,7 @@ import { bevWall, wallShelf, BOT } from './stores.js?v=ggt21mp';
 import { PI, R, pick, BRIGHT, rcyl, lathe, sph, cyl, cone, torus, capsule, star, blobGeo, txt, wallWord, cartStatic, grokLogo, frameArt } from './art.js?v=ggt21mp';
 import { textGeo } from './text3d.js?v=ggt21mp';
 import { OWN as OP_OWN } from './online.js?v=ggt21mp';
+import { buildHoliday } from './holiday.js?v=ggt21mp';
 const SHOE = [0xef4444, 0x111827, 0xffffff, 0x2563eb, 0x7c3aed, 0x92400e, 0xfacc15, 0x22c55e, 0xf97316];
 // one themed wall run, local x in [-L/2, L/2], wall at local z=0, facing +z
 function units(T, L, kind, ac) { const n = Math.max(1, Math.floor(L / 1.25)), uw = L / n;
@@ -170,7 +171,7 @@ function frontDetail(w, d, G, type, ac) { const cx = G.cx, F = d.z1, sm = !!d.st
   w.add('m', rbox(Math.max(4, maxX - minX - 2), 0.012, 0.12, 0.005), ac, cx, 0.012, G.zFloorF + 0.1);
 }
 // ---------------- build one store's decor ----------------
-export function buildDecor(w, d, G, type, brand, rival) { const TY = TYPES[type] || TYPES.grocery, look = LOOK[type] || LOOK.grocery, ac = rival ? d.trim : TY.col, { x0, x1, z1 } = d, W = x1 - x0, cx = G.cx;
+export function buildDecor(w, d, G, type, brand, rival, theme) { const TY = TYPES[type] || TYPES.grocery, look = LOOK[type] || LOOK.grocery, ac = rival ? d.trim : TY.col, { x0, x1, z1 } = d, W = x1 - x0, cx = G.cx;
   // facade sign (exterior)
   w.region = 'dx'; { const len = brand.length, size = Math.min(0.78, (W * 0.62) / (len * 0.66)); const wd = txt(w, brand, cx, 4.55, z1 + 0.32, 0, size, rival ? (d.id === 'rival' ? 0xdc2626 : 0xffffff) : 0xffffff, 'l', 0.12) || len * size * 0.66;
     const lx = Math.min(W / 2 - 1.1, wd / 2 + 1.0); if (rival) [-1, 1].forEach((s) => w.add('l', star(), d.id === 'rival' ? 0xfacc15 : 0xffffff, cx + s * lx, 4.9, z1 + 0.3, 0, 0, 0, 0.55, 0.55, 0.25, 0.3)); else [-1, 1].forEach((s) => grokLogo(w, cx + s * lx, 4.7, z1 + 0.5, 0, 0.8));
@@ -190,10 +191,10 @@ const _sc = new THREE.Scene();
 export class Decor {
   // facades stay resident; interiors are built when the store comes into view and freed ~8s after it leaves view (iOS memory)
   constructor(scene, world, GEOM) { this.scene = scene; this.world = world; this.GEOM = GEOM; this.cur = {}; }
-  _build(sid, o, wantExt) { const d = STORE[sid], G = this.GEOM[sid], tw = new World(); tw.lights = []; tw.uploader = this.upload || null; buildDecor(tw, d, G, o.type, o.brand, o.rival); tw.finalize(_sc); _sc.remove(tw.group);
+  _build(sid, o, wantExt) { const d = STORE[sid], G = this.GEOM[sid], tw = new World(); tw.lights = []; tw.uploader = this.upload || null; buildDecor(tw, d, G, o.type, o.brand, o.rival, o.rival ? null : this.theme); if (!o.rival && this.theme) buildHoliday(tw, d, G, this.theme); tw.finalize(_sc); _sc.remove(tw.group);
     const ext = new THREE.Group(), int = new THREE.Group(); for (const m of [...tw.group.children]) { if (m.userData.region === 'dx') { if (wantExt) ext.add(m); else m.geometry && m.geometry.dispose(); } else int.add(m); }
     const sol = tw.solids.map((x) => Object.assign(x, { dyn: true, dx: 0, dy: 0, dz: 0, off: true })); this.world.dyn.push(...sol); int.visible = false; this.scene.add(int); o.int = int; o.sol = sol; o.seen = performance.now(); if (wantExt) { this.scene.add(ext); o.ext = ext; } }
-  set(sid, type, brand, rival) { const key = type + '|' + brand; const old = this.cur[sid]; if (old && old.key === key) return old; if (old) this.drop(sid);
+  set(sid, type, brand, rival) { const key = type + '|' + brand + '|' + (rival ? '' : this.theme || ''); const old = this.cur[sid]; if (old && old.key === key) return old; if (old) this.drop(sid);
     const o = (this.cur[sid] = { key, type, brand, rival, ext: null, int: null, sol: [] }); this._build(sid, o, true); return o; }
   _freeInt(o) { if (!o.int) return; this.scene.remove(o.int); o.int.traverse((m) => m.geometry && m.geometry.dispose()); o.int = null; const set = new Set(o.sol); this.world.dyn = this.world.dyn.filter((x) => !set.has(x)); o.sol = []; }
   drop(sid) { const o = this.cur[sid]; if (!o) return; this._freeInt(o); if (o.ext) { this.scene.remove(o.ext); o.ext.traverse((m) => m.geometry && m.geometry.dispose()); } delete this.cur[sid]; }

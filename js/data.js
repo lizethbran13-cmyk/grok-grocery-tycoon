@@ -1,4 +1,5 @@
 // Grok Grocery Tycoon - game data: departments, fixtures, stores, ranks, staff, suppliers, events.
+import { OWN as OWN58 } from './holiday.js?v=ggt21mp';
 export const DEPTS = {
   grocery: { n: 'Grocery', e: '🥫', val: 6, sup: 'ratita', col: 0xef4444 },
   produce: { n: 'Produce', e: '🥦', val: 5, sup: 'farm', col: 0x16a34a },
@@ -50,6 +51,7 @@ export const FIX = {
   techcase: { n: 'Gadget Table', e: '🎧', dept: 'tech', cap: 16, cost: 1500, kind: 'floor' },
   clothesrack: { n: 'Clothing Racks', e: '👕', dept: 'apparel', cap: 30, cost: 550, kind: 'floor' },
   foldtable: { n: 'Folding Tables + Mannequins', e: '👖', dept: 'apparel', cap: 26, cost: 500, kind: 'floor' },
+  thanks: { n: 'Thanksgiving Aisle', e: '🦃', dept: 'grocery', cap: 36, cost: 600, kind: 'floor', need: 'dlc58' }, // DLC #58 Mini Pack
   homeshelf: { n: 'Home Decor Shelf', e: '🕯️', dept: 'home', cap: 24, cost: 650, kind: 'floor' },
   sofa: { n: 'Living Room Display', e: '🛋️', dept: 'home', cap: 8, cost: 1400, kind: 'floor' },
   register: { n: 'Checkout Lane', e: '🧾', cost: 900, kind: 'check' },
@@ -71,6 +73,7 @@ export const TYPES = {
   clothing: { n: 'Clothing Store', e: '👕', brand: 'GROK THREADS', tag: 'WEAR THE GROK LOOK', fix: ['clothesrack', 'foldtable', 'shoewall'], mix: ['clothesrack', 'foldtable', 'clothesrack', 'clothesrack', 'foldtable', 'shoewall', 'clothesrack', 'foldtable'], traffic: 0.55, sp: { clothesrack: 'fold', foldtable: 'fold' }, words: ['NEW STYLES', 'DENIM', 'SALE RACK'], col: 0xdb2777, blurb: 'Racks, mannequins and folding tables. Keep it tidy!' },
   home: { n: 'Home Goods Store', e: '🛋️', brand: 'GROK HOME', tag: 'MAKE IT COZY', fix: ['homeshelf', 'sofa'], mix: ['sofa', 'homeshelf', 'homeshelf', 'sofa', 'homeshelf', 'homeshelf', 'sofa', 'homeshelf'], traffic: 0.5, sp: { sofa: 'stage', homeshelf: 'stage' }, words: ['COZY', 'KITCHEN', 'DECOR'], col: 0xa16207, blurb: 'Sofas, lamps, pillows and kitchenware.' },
 };
+if (OWN58) for (const t of ['grocery', 'supercenter', 'market']) TYPES[t].fix.push('thanks'); // DLC #58: the Thanksgiving Aisle is buildable in food stores
 export const TYPE_IDS = Object.keys(TYPES);
 export const typeOf = (st) => TYPES[(st && st.type) || 'grocery'] || TYPES.grocery;
 // default floor plan for a store type in a given footprint (fill = share of floor slots in use)
