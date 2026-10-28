@@ -17,7 +17,10 @@ export function initInput() {
     el.addEventListener('mousedown', on); el.addEventListener('mouseup', off); el.addEventListener('mouseleave', off); });
   // stick + look
   const z = $('touchZone'), knob = $('stickKnob'), ring = $('stickRing'); const S = IN.stick; let look = null, lx = 0, ly = 0;
-  const startT = (e) => { e.preventDefault(); for (const t of e.changedTouches) { const left = t.clientX < window.innerWidth * 0.5 && t.clientY > window.innerHeight * 0.3;
+  const startT = (e) => { if (e.target && e.target.closest && e.target.closest("button, .pd, #dSide, #dBroke, #pk52, #sd52")) return; e.preventDefault(); for (const t of e.changedTouches) {
+      const hitEl = document.elementFromPoint(t.clientX, t.clientY);
+      if (hitEl && hitEl.closest && hitEl.closest("button, .pd, #dSide, #dBroke, #pk52, #sd52")) continue;
+      const left = t.clientX < window.innerWidth * 0.5 && t.clientY > window.innerHeight * 0.3;
       if (left && S.id === null) { S.id = t.identifier; S.x0 = t.clientX; S.y0 = t.clientY; S.x = S.y = 0; ring.style.left = knob.style.left = t.clientX + 'px'; ring.style.top = knob.style.top = t.clientY + 'px'; ring.classList.add('on'); knob.classList.add('on'); }
       else if (look === null) { look = t.identifier; lx = t.clientX; ly = t.clientY; } } };
   const moveT = (e) => { e.preventDefault(); for (const t of e.changedTouches) { if (t.identifier === S.id) { let dx = t.clientX - S.x0, dy = t.clientY - S.y0; const d = Math.hypot(dx, dy), R = 52; if (d > R) { // drag the base along so the stick never "runs out"
