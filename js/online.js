@@ -14,7 +14,9 @@ export function owned() { try { if (QS.get('locked') === '1') return false; if (
   if (localStorage.getItem(KEY)) return true; const l = JSON.parse(localStorage.getItem('grokDLC.owned') || '[]'); return Array.isArray(l) && l.indexOf(KEY) >= 0; } catch (e) { return false; } }
 export const OWN = owned();
 // ---------------------------------------------------------------- places
-export const WH = { x0: 84, z0: -44, x1: 103, z1: -16, dockX: 90, doorX: 99.5 };      // Shopsville Ship Center (east of the distribution center)
+export const WH = { x0: 84, z0: -44, x1: 103, z1: -16, dockX: 90, doorX: 99.5 };
+export const VAN_SIGNS = { ship: [95.5, -8.8], main: [24.5, 0.5] };
+export const HOME_GEOM = { id: 'home', name: '🏠 Your Shopsville Home', x0: -69, z0: 119, x1: -53, z1: 131, cx: -61, doorX: -61, front: 119, back: 131, stove: [-56.5, 128.3], fridge: [-55, 125], table: [-58, 122.3] };      // Shopsville Ship Center (east of the distribution center)
 export const DESK = { x: 21.9, z: -10.2, cx: 20.6 };                                       // Online Store desk, front-right corner of Main St (s1)
 export const VAN_HOME = [[24.5, 3.2], [21.5, 3.2]];                                     // Grok van bays (van 1, van 2) in the Main St lot
 export const HOUSES = [
@@ -26,10 +28,97 @@ export const HOUSES = [
   { x: 75, n: '6 Maple Ln', fam: 'The Lees', wall: 0xe9d5ff, roof: 0x4c1d95, door: 0xb91c1c },
 ];
 const HZ = 119; // house fronts (road z=110, sidewalk to 117.2)
-export function treeOk(x, z) { return !OWN || eastTreeOk(x, z) && !(x > 81 && x < 106 && z > -48 && z < 8) && !(z > 112 && z < 132 && Math.abs(x) < 92 && HOUSES.some((h) => Math.abs(h.x - x) < 9.5)); }
+export function treeOk(x, z) { return !OWN || eastTreeOk(x, z) && !(x > 81 && x < 106 && z > -48 && z < 8) && !(z > 112 && z < 132 && Math.abs(x) < 92 && HOUSES.some((h) => Math.abs(h.x - x) < 9.5)) && !(x > -72 && x < -50 && z > 112 && z < 134) && !(Math.abs(x - VAN_SIGNS.main[0] - 3.4) < 3 && Math.abs(z - VAN_SIGNS.main[1]) < 3); }
 // ---------------------------------------------------------------- world build (only when owned)
+
+function buildPlayerHome(w, SPOTS) {
+  const { x0, z0, x1, z1, cx } = HOME_GEOM, L = w.lights;
+  const b = shell(w, { id: 'home', name: '🏠 Your Shopsville Home', x0, z0, x1, z1, h: 5.2, wall: 0xfef3c7, trim: 0xd97706, roof: 0x9a3412, floor: 'wood', fc1: 0xdbb481, fc2: 0xc69c66, doors: [{ side: 'n', at: cx, w: 3.4, top: 3.5 }], win: { n: 2, s: 2, e: 2, w: 2 } });
+  w.region = 'out';
+  // Front walkway, porch awning, mailbox & home sign
+  w.add('g', rbox(3.6, 0.05, 3.6, 0.02, 1), 0xe7e5e4, cx, 0.025, z0 - 1.8);
+  onSide(w, b, 'n', () => {
+    w.add('g', rbox(6.8, 0.28, 1.8, 0.08), 0xd97706, cx, 3.7, z0 - 0.8);
+    txt(w, 'YOUR SHOPSVILLE HOME', cx, 4.35, z0 - 0.32, PI, 0.28, 0x7c2d12);
+    txt(w, 'COOK · RELAX · PETS', cx, 3.55, z0 - 1.72, PI, 0.16, 0xffffff);
+  });
+  // Mailbox + welcome planter outside
+  w.add('x', cyl(8), 0x334155, cx + 2.8, 0, z0 - 2.2, 0, 0, 0, 0.05, 1.05, 0.05);
+  w.add('g', rbox(0.55, 0.34, 0.72, 0.06), 0x16a34a, cx + 2.8, 1.15, z0 - 2.2);
+  txt(w, '104 HOME', cx + 2.8, 1.12, z0 - 2.58, PI, 0.09, 0xffffff);
+  K.flowerBed(w, x0 + 0.8, z0 - 1.8, cx - 2.4, z0 - 0.6);
+  K.flowerBed(w, cx + 3.6, z0 - 1.8, x1 - 0.8, z0 - 0.6);
+  SPOTS.homeDoor = [cx, z0 - 1.6];
+
+  // Interior: Kitchen (east side) & Living Room / Pet Lounge (west side)
+  w.region = 'in_home';
+  K.rug(w, cx, z0 + 1.5, 0, 3.2, 1.8, 0x16a34a, 0xfef3c7);
+  // Kitchen counter + 4-burner Stove & Oven (south-east wall)
+  w.slab('m', 0xffffff, -56.5, 0, 129.8, 5.2, 0.95, 0.9, 0.05);
+  w.add('g', rbox(5.3, 0.06, 0.96, 0.02), 0x1e293b, -56.5, 0.98, 129.8);
+  // Stove unit in center of counter
+  w.slab('x', 0x334155, -56.5, 0, 129.75, 1.6, 0.98, 0.96, 0.04);
+  w.add('e', rbox(1.2, 0.52, 0.04, 0.02), 0x0f172a, -56.5, 0.48, 129.26);
+  for (let i = 0; i < 4; i++) {
+    const bx = -56.9 + (i % 2) * 0.8, bz = 129.55 + Math.floor(i / 2) * 0.42;
+    w.add('l', torus(0.16, 14), 0xf97316, bx, 1.02, bz, PI / 2, 0, 0, 0.16, 0.16, 0.12, 0.5);
+  }
+  // Stockpot + skillet on stove
+  w.add('g', cyl(16), 0xdc2626, -56.9, 1.03, 129.55, 0, 0, 0, 0.22, 0.28, 0.22);
+  w.add('x', cyl(16), 0x1f2937, -56.1, 1.03, 129.95, 0, 0, 0, 0.22, 0.08, 0.22);
+  // Range hood + sign
+  w.add('x', rbox(1.8, 0.35, 0.9, 0.04), 0x94a3b8, -56.5, 2.55, 129.8);
+  txt(w, 'KITCHEN STOVE · COOK', -56.5, 2.1, 129.25, PI, 0.16, 0xd97706);
+  SPOTS.homeStove = [-56.5, 128.3];
+
+  // Stainless Double-Door Fridge + Stocked Pantry along east wall
+  w.slab('x', 0xcbd5e1, -53.8, 0, 126.3, 1.1, 2.3, 1.5, 0.06);
+  w.add('x', rbox(0.05, 1.0, 0.06, 0.01), 0x475569, -54.38, 1.3, 126.15);
+  w.add('x', rbox(0.05, 1.0, 0.06, 0.01), 0x475569, -54.38, 1.3, 126.45);
+  txt(w, 'HOME FRIDGE', -54.38, 2.05, 126.3, -PI / 2, 0.13, 0x0f172a);
+  rack(w, -53.9, 123, -PI / 2, 2);
+  txt(w, 'PANTRY', -54.38, 2.15, 123, -PI / 2, 0.15, 0x16a34a);
+  SPOTS.homeFridge = [-55, 125];
+
+  // Kitchen Island & Dining Table
+  w.slab('m', 0xfef3c7, -57.5, 0, 126, 2.4, 0.9, 1.1, 0.05);
+  w.add('g', rbox(2.5, 0.06, 1.2, 0.02), 0x7c4a1e, -57.5, 0.93, 126);
+  produceCrate(w, -58.1, 0.98, 126, 0x16a34a, 0.05);
+  produceCrate(w, -56.9, 0.98, 126, 0xef4444, -0.05);
+  K.tableR(w, -58, 122.3, 1.15, 0.78, 0xffffff);
+  for (let i = 0; i < 4; i++) {
+    const a = i * PI / 2 + PI / 4;
+    K.chair(w, -58 + Math.cos(a) * 1.45, 0, 122.3 + Math.sin(a) * 1.45, -a - PI / 2, 0xd97706);
+    w.add('g', cyl(12), 0xfef3c7, -58 + Math.cos(a) * 0.65, 0.80, 122.3 + Math.sin(a) * 0.65, 0, 0, 0, 0.18, 0.03, 0.18);
+  }
+  txt(w, 'DINING TABLE', -58, 1.45, 122.3, PI, 0.14, 0x7c2d12);
+  SPOTS.homeTable = [-58, 122.3];
+
+  // Living Room (west half): rug, plush sofa, coffee table, TV, pet beds
+  K.rug(w, -65, 126, 0, 5.2, 4.2, 0x2563eb, 0xdbeafe);
+  w.slab('f', 0x1d4ed8, -65, 0, 128.9, 3.8, 0.55, 1.1, 0.12);
+  w.slab('f', 0x1e40af, -65, 0.45, 129.35, 3.8, 0.65, 0.32, 0.1);
+  w.slab('g', 0x7c4a1e, -65, 0, 126.7, 2.0, 0.48, 1.0, 0.06);
+  // Big TV on north-west wall
+  w.slab('m', 0x475569, -65.5, 0, 119.9, 2.8, 0.65, 0.6, 0.04);
+  w.add('g', rbox(2.4, 1.35, 0.08, 0.03), 0x0f172a, -65.5, 1.45, 119.85);
+  w.add('l', rbox(2.2, 1.18, 0.02, 0.02), 0x38bdf8, -65.5, 1.45, 119.91, 0, 0, 0, 1, 1, 1, 0.35);
+  txt(w, 'GROK TV', -65.5, 2.3, 119.95, 0, 0.14, 0x1e40af);
+  // 5 Family Pet Cozy Beds along west wall
+  const petCols = [0x94a3b8, 0x92400e, 0xf8fafc, 0xf472b6, 0x16a34a];
+  for (let i = 0; i < 5; i++) {
+    w.add('f', rcyl(0.45, 0.14, 0.06, 16), petCols[i], -67.8, 0.07, 121.7 + i * 1.65);
+  }
+  K.potPlant(w, -68, 0, 120, 1.0, 0x16a34a);
+  K.potPlant(w, -53.8, 0, 120, 1.0, 0xd97706);
+  pendant(w, -57.5, 125, 0xfde68a, 4.4);
+  pendant(w, -65, 126, 0xfde68a, 4.4);
+  L.push({ x: -57.5, y: 3.8, z: 125, c: 0xfff7e6, i: 14, d: 14 });
+  L.push({ x: -65, y: 3.8, z: 126, c: 0xfff7e6, i: 12, d: 14 });
+}
+
 export function buildOnline(w, SPOTS) { if (!OWN) return; const L = w.lights;
-  buildDesk(w, L); buildCurb(w); buildShipCenter(w, L); HOUSES.forEach((h) => house(w, h)); mapleLane(w); buildEast(w, L); w.region = 'out'; }
+  buildDesk(w, L); buildCurb(w); buildShipCenter(w, L); buildVanSigns(w); buildPlayerHome(w, SPOTS); HOUSES.forEach((h) => house(w, h)); mapleLane(w); buildEast(w, L); w.region = 'out'; }
 function buildDesk(w, L) { const { x, z } = DESK; w.region = 'in_s1';
   // counter facing the shop floor (west), in the front-right corner (the Customer Service corner moves here)
   { const T = w.tf(x, 0, z, -PI / 2); T.slab('m', 0x0f766e, 0, 0, 0, 2.7, 1.0, 0.8, 0.06); T.box('g', 0xf8fafc, 0, 1.0, 0, 2.85, 0.07, 0.95, 0.03); T.box('g', 0x14b8a6, 0, 0.12, 0.41, 2.6, 0.7, 0.02, 0.01);
@@ -92,6 +181,14 @@ function deskFloor(w) {
   { const T = w.tf(21.45, 0, -14.05, 0); T.slab('g', 0xf8fafc, 0, 0, 0, 0.9, 0.78, 0.9, 0.06); T.box('g', 0x14b8a6, 0, 0.78, 0, 0.95, 0.03, 0.95, 0.01);
     [[-0.22, -0.2, 0xff4fa0, 0.3], [0.2, -0.18, 0xfacc15, 0.22], [0.05, 0.22, 0x3b82f6, 0.34]].forEach(([a, b, c, h]) => { T.box('g', c, a, 0.81, b, 0.32, h, 0.32, 0.03); T.box('g', 0xffffff, a, 0.81, b, 0.34, h + 0.01, 0.05, 0.01); });
     T.box('x', 0x111827, -0.3, 0.81, 0.3, 0.2, 0.3, 0.03, 0.02); T.box('e', 0x5eead4, -0.3, 0.84, 0.32, 0.17, 0.25, 0.005, 0.01, 0.4); for (let k = 0; k < 3; k++) T.box('m', [0xfde68a, 0xbfdbfe, 0xfbcfe8][k], 0.3, 0.81 + k * 0.01, 0.3, 0.22, 0.008, 0.3, 0.003); T.solid(-0.47, 0, -0.47, 0.47, 1.1, 0.47); } }
+function vanSign(w, x, z, title) { // issue #87: medium-size double-sided Grok Van sign (walk up -> Test Ride / Deliver menu)
+  [-1.05, 1.05].forEach((ox) => { w.add('x', cyl(10), 0x334155, x + ox, 0, z, 0, 0, 0, 0.08, 2.55, 0.08); w.add('g', rbox(0.32, 0.14, 0.32, 0.04), 0xfacc15, x + ox, 0.07, z); });
+  w.add('g', rbox(2.85, 1.38, 0.16, 0.06), 0x0d9488, x, 2.05, z); w.add('g', rbox(2.65, 1.18, 0.18, 0.04), 0x0f172a, x, 2.05, z); w.add('l', sph(10), 0xfacc15, x, 2.86, z, 0, 0, 0, 0.16, 0.16, 0.16, 0.6);
+  [0, PI].forEach((ry) => { const dz = ry === 0 ? 0.1 : -0.1; txt(w, title, x, 2.36, z + dz, ry, 0.19, 0xfacc15); txt(w, 'TEST RIDE · DELIVER', x, 2.03, z + dz, ry, 0.15, 0x5eead4); txt(w, 'WALK UP + TAP SIGN', x, 1.72, z + dz, ry, 0.12, 0xffffff); });
+  w.solid(x - 1.2, 0, z - 0.2, x + 1.2, 2.7, z + 0.2); }
+function buildVanSigns(w) { w.region = 'out'; const [sx, sz] = VAN_SIGNS.ship; vanSign(w, sx, sz, 'GROK VAN SIGN');
+  [-1.3, 1.3].forEach((ox) => w.add('l', rbox(0.12, 0.02, 5.4, 0.01), 0x5eead4, sx + ox, 0.06, sz + 2.8, 0, 0, 0, 1, 1, 1, 0.25)); w.add('l', rbox(2.7, 0.02, 0.14, 0.01), 0xfacc15, sx, 0.06, sz + 0.25, 0, 0, 0, 1, 1, 1, 0.35);
+  const [mx, mz] = VAN_SIGNS.main; vanSign(w, mx + 3.4, mz, 'GROK VAN 1'); }
 function buildCurb(w) { w.region = 'out';
   VAN_HOME.forEach(([x, z], i) => { for (const s of [-1, 1]) w.add('l', rbox(0.12, 0.02, 5.0, 0.01), 0x2dd4bf, x + s * 1.45, 0.06, z + 0.4, 0, 0, 0, 1, 1, 1, 0);
     w.add('x', cyl(10), 0x334155, x, 0, z - 2.5, 0, 0, 0, 0.05, 2.1, 0.05); w.add('g', rbox(1.1, 0.75, 0.08, 0.04), 0x0f766e, x, 2.1, z - 2.5); txt(w, i ? 'GROK VAN 2' : 'GROK VAN 1', x, 2.16, z - 2.45, 0, 0.15, 0xffffff); txt(w, 'DELIVERY BAY', x, 1.9, z - 2.45, 0, 0.09, 0x99f6e4); w.solid(x - 0.1, 0, z - 2.6, x + 0.1, 2.4, z - 2.4); });
@@ -217,7 +314,7 @@ function house(w, h) { w.region = 'out'; const x = h.x, zf = HZ, D = 7, zc = zf 
   if (hi === 5) { w.add('m', rbox(1.4, 0.04, 1.4, 0.01), 0xf472b6, x - 6.4, 0.08, 121.6); for (let i = 0; i < 2; i++) w.add('g', capsule(10), [0xfacc15, 0x22c55e][i], x - 6.6 + i * 0.5, 0.25, 121.5, PI / 2, 0, 0, 0.12, 0.3, 0.12); }
   h.porch = [x, zf - 1.2]; h.curb = [x + 0.6, 114.0]; }
 function mapleLane(w) { w.region = 'out'; { const X = -98, Z = 118; w.add('x', cyl(10), 0x334155, X, 0, Z, 0, 0, 0, 0.07, 2.4, 0.07); w.add('g', rbox(2.6, 0.5, 0.08, 0.04), 0x15803d, X, 2.5, Z); txt(w, 'MAPLE LANE', X, 2.44, Z - 0.05, PI, 0.24, 0xffffff); }
-  for (const x of [-60, -30, 0, 30, 60]) K.lampPost(w, x, 117.6); }
+  for (const x of [-30, 0, 30, 60]) K.lampPost(w, x, 117.6); }
 // ---------------------------------------------------------------- runtime meshes
 function meshFrom(Builder, compact, MATS, parts) { const g = new THREE.Group(); for (const k in parts) { const b = parts[k]; if (!b.parts.length) continue; const m = new THREE.Mesh(compact(b.build(), k), MATS[k]); m.castShadow = k !== 'l' && k !== 'e'; m.receiveShadow = true; g.add(m); } return g; }
 export function vanProto(Builder, P, compact, MATS, col = 0x0f766e, word) { const b = { f: new Builder(), g: new Builder(), m: new Builder(), l: new Builder(), x: new Builder(), e: new Builder() };

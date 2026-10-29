@@ -25,6 +25,7 @@ import { MG_NAMES } from './mg.js?v=ggt21mp';
 import { LINES, QUIZ, TASKS, dailyFor } from './story.js?v=ggt21mp';
 import { Online } from './onlinesim.js?v=ggt21mp';
 import { bonusTick } from './patch52.js?v=ggt21mp';
+import { Issue87, bonus87 } from './issue87.js?v=ggt21mp';
 import { OWN as OP_OWN } from './online.js?v=ggt21mp';
 const PI = Math.PI;
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _c = new THREE.Color();
@@ -208,14 +209,14 @@ export class Game {
     push(SP.labMachine[0], SP.labMachine[1], 2.0, '📦 Run the packing machine', () => this.mg('load', {}, (sc) => this.reward('stock', sc)));
     push(SP.fountain[0], SP.fountain[1], 2.2, '🪙 Toss a coin in the fountain', () => { if (S.money >= 1) S.money -= 1; sfx('splash'); toast(['🍎 You wished for a five-star inspection.', '✨ The fountain says: "Clean up on aisle 5."', '💧 Splash! A shopping-cart-shaped ripple.'][(Math.random() * 3) | 0]); });
     push(SP.foodtruck[0], SP.foodtruck[1], 2.2, '🌮 Buy a taco ($3)', () => { if (this.spend(3)) toast('🌮 Delicious. Grok Tacos uses Fernhill tomatoes.'); });
-    this.online.gather(push);
+    this.online.gather(push); (this.i87 || (this.i87 = new Issue87(this))).gather(push);
     let best = null; for (const a of out) if (!best || a.d < best.d) best = a; return best; }
   spyDept(sid, dept) { const st = S.stores[sid], myId = storeIds().find((k) => mine(k) && capOf(S.stores[k], dept)) || 's1', my = S.stores[myId]; S.spy = S.spy || {}; S.spy[sid + dept] = S.day; const theirs = Math.round(DEPTS[dept].val * st.price[dept] * 100) / 100, mineP = Math.round(DEPTS[dept].val * my.price[dept] * 100) / 100;
     sfx('check'); talk([['Price tag', `${STORE[sid].name} ${DEPTS[dept].e} ${DEPTS[dept].n}: about $${theirs.toFixed(2)} an item. Yours: $${mineP.toFixed(2)}. ${theirs < mineP ? 'They\'re cheaper here!' : theirs > mineP ? 'You\'re cheaper. Nice!' : 'Same price.'}`]]); if (!S.spyXp || S.spyXp !== S.day + dept) { S.spyXp = S.day + dept; if (S.mode === 'career') this.reward('help', 0.5, ' · market research'); } }
   // ---------------- per-frame ----------------
   update(dt) { this.T += dt; const app = this.app, me = this.me;
     const busy = app.busy || talking(); const mv = busy ? { x: 0, y: 0 } : readMove(); const j = !busy && edge('jump');
-    let inside = false; const P52 = this.online && this.online.p52; bonusTick(app);
+    let inside = false; const P52 = this.online && this.online.p52; bonusTick(app); bonus87(app); (this.i87 || (this.i87 = new Issue87(this))).tick(dt);
     if (P52 && P52.d) { P52.tick(dt, mv); this.setVis(); inside = false; } else {
     if (edge('view')) this.toggleFP();
     if (this.fp) { if (IN.camDX || IN.camDY) { this.cam.yaw -= IN.camDX * 0.0065; this.fpPitch = Math.max(-1.1, Math.min(1.1, this.fpPitch - IN.camDY * 0.0045)); IN.camDX = IN.camDY = 0; } }

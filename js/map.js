@@ -8,7 +8,7 @@ import { shell, part, onSide } from './bld.js?v=ggt21mp';
 import { STORES } from './data.js?v=ggt21mp';
 import { storeBuilding } from './stores.js?v=ggt21mp';
 import { supplierDetail } from './supfill.js?v=ggt21mp';
-import { buildOnline, treeOk, OWN as OWN52 } from './online.js?v=ggt21mp';
+import { buildOnline, treeOk, OWN as OWN52, HOME_GEOM } from './online.js?v=ggt21mp';
 import { PI, R, pick, BRIGHT, rcyl, lathe, sph, cyl, cone, torus, capsule, tube, star, heart, blobGeo, wedge, txt, poster, wallWord, clockW, pendant, rack, pallet, cartStatic, planter, awning, trash, bags, produceCrate, grokLogo } from './art.js?v=ggt21mp';
 export const SPOTS = {}; export const GEOM = {};
 export const ENV = { sunDir: [0.5, 0.8, 0.32], sunColor: 0xfff3e0, sunI: 2.5, hemiSky: 0xdaf0ff, hemiGround: 0x7a9a5a, hemiI: 0.62, skyTop: 0x3b8beb, skyMid: 0xb3dcff, skyBot: 0xeef8ff, fog: 0xdcefff, fogD: 0.0036, exposure: 1.0, envI: 0.85, bloomT: 1.05, bloomS: 0.32, sunDisc: 1, stars: 0 };
@@ -57,7 +57,7 @@ export function buildMap(w) {
   STORES.forEach((d) => { const r = storeBuilding(w, d, d.id === 's1'); GEOM[d.id] = r.G; });
   // Shopsville Shopping Row sidewalk lamps + a row sign
   w.region = 'out'; [-49, -24, 1, 26, 51, 76].forEach((x) => K.lampPost(w, x, -61.4)); { const X = 103.5, Z = -72; w.add('g', rbox(0.4, 2.4, 6, 0.15), 0x1d4ed8, X, 2.6, Z); txt(w, 'SHOPPING ROW', X - 0.22, 2.9, Z, -PI / 2, 0.4, 0xffffff); txt(w, 'SHOPS · SUPERCENTER', X - 0.22, 2.3, Z, -PI / 2, 0.22, 0xfde68a); w.add('x', cyl(10), 0x334155, X, 0, Z, 0, 0, 0, 0.1, 1.4, 0.1); w.solid(X - 0.3, 0, Z - 3, X + 0.3, 3.8, Z + 3); }
-  buildDC(w); buildRatita(w); buildTortuga(w); buildRuff(w); buildHall(w); buildFarm(w); buildLab(w); supplierDetail(w); buildOnline(w, SPOTS);
+  buildDC(w); buildRatita(w); buildTortuga(w); buildRuff(w); buildHall(w); buildFarm(w); buildLab(w); supplierDetail(w); buildOnline(w, SPOTS); GEOM.home = HOME_GEOM;
   w.region = 'out';
 }
 // ---------------- distribution center ----------------
